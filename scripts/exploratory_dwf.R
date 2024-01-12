@@ -15,10 +15,10 @@ library(countrycode)
 library(exploreARTIS)
 
 # Load data
-# source("load_data.R")
+
 artis_sau <- read.csv("data/SAU_ARTIS_2010-2020.csv")
 
-# Clean data
+# Clean data # source("load_data.R") # AM - can read in locally from standardized_sau_prod.csv (QA/outputs in ARTIS repo)
 prod_sau <- prod_sau %>%
   # Break apart EEZ column to identify ISO codes
   separate(eez, into = c("eez_1", "eez_2"), sep = "\\(", remove = FALSE) %>%
