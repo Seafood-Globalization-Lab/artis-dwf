@@ -18,7 +18,10 @@ library(exploreARTIS)
 
 artis_sau <- read.csv("data/SAU_ARTIS_2010-2020.csv")
 
-# Clean data # source("load_data.R") # AM - can read in locally from standardized_sau_prod.csv (QA/outputs in ARTIS repo)
+# load new data - AM from ARTIS/QA/outputs/
+prod_sau <- read_csv("./data/standardized_sau_prod.csv")
+
+# Clean data # source("load_data.R")
 prod_sau <- prod_sau %>%
   # Break apart EEZ column to identify ISO codes
   separate(eez, into = c("eez_1", "eez_2"), sep = "\\(", remove = FALSE) %>%
@@ -34,13 +37,19 @@ prod_sau <- prod_sau %>%
     (eez == "US Virgin Isl.") ~ "USA",
     TRUE ~ eez_iso3c
   )) %>%
-  select(-eez_1, -eez_2) %>%
   # FIXIT: Need to add in country standardization here
-  # Tag domestic versus foreign fishing
+  
+  # adds artis_iso3 and artis_country_name columns
+  standardize_eez(prod_sau, "eez_iso3c", "eez_1") %>% 
+
+
+  # Tag domestic versus foreign fishing - use artis_iso3 instad of eez_iso3c
+  ## AM - Q - what is country_iso3_alpha? 
   mutate(dwf = case_when(
-    (eez_iso3c == country_iso3_alpha) ~ "domestic",
+    (artis_iso3 == country_iso3_alpha) ~ "domestic",
     TRUE ~ "foreign"
-  ))
+  )) #%>% 
+  #select(-eez_1, -eez_2, )
   
 # Summary stats/figs on DWF
 prod_sau %>%
