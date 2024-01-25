@@ -1,10 +1,10 @@
 # ARTIS DWF Update
 
 # NOTES:
-# - Standardize EEZ territories
+# - Standardize EEZ territories (done)
 # - Find out what happened to catch on the high seas
 # - Identify source of many-to-many matching issue
-# - Ensure only marine capture is retained
+# - Ensure only marine capture is retained (done - with sau standardized data)
 # - Improve sankey figures to represent consumption flows
 # - Create country profiles for Oceana + select countries of interest
 # - Interest in W Africa pelagics and humboldt squid
@@ -14,16 +14,19 @@ library(tidyverse)
 library(countrycode)
 library(exploreARTIS)
 
-# Load data
-
+# Load data - existing SAU data in ARTIS
 artis_sau <- read.csv("data/SAU_ARTIS_2010-2020.csv")
 
-# load new data - AM from ARTIS/QA/outputs/
+# load new SAU data - AM from ARTIS repo ./QA/outputs/
+# Only contains species & countries standardized SAU marine capture (not EEZ) 
 prod_sau <- read_csv("./data/standardized_sau_prod.csv")
 
-# Clean data # source("load_data.R")
+# load data from ARTIS database
+# source("load_df_data.R")
+
+# Clean data 
 prod_sau <- prod_sau %>%
-  # Break apart EEZ column to identify ISO codes
+  # Break apart EEZ column - identify ISO3 codes with one of the 3 eez columns
   separate(eez, into = c("eez_1", "eez_2"), sep = "\\(", remove = FALSE) %>%
   mutate(eez_2 = gsub("\\)", "", eez_2)) %>%
   mutate(eez_iso3c = countrycode(eez, origin = "country.name", destination = "iso3c")) %>% 
@@ -33,28 +36,31 @@ prod_sau <- prod_sau %>%
   mutate(eez_iso3c = case_when(
     (!is.na(eez_iso3c)) ~ eez_iso3c, 
     (is.na(eez_iso3c) ~ countrycode(eez_2, origin = "country.name", destination = "iso3c")))) %>%
+  
+  # correct single instance 
   mutate(eez_iso3c = case_when(
     (eez == "US Virgin Isl.") ~ "USA",
     TRUE ~ eez_iso3c
   )) %>%
-  # FIXIT: Need to add in country standardization here
+  
+  # use ISO3 codes to generate standard country name column
+  mutate(eez_current_name = countrycode(eez_iso3c, origin = "iso3c", destination = "country.name")) %>% 
   
   # adds artis_iso3 and artis_country_name columns
-  standardize_eez(prod_sau, "eez_iso3c", "eez_1") %>% 
+  standardize_sau_eez("eez_iso3c", "eez_current_name") %>% 
 
-
-  # Tag domestic versus foreign fishing - use artis_iso3 instad of eez_iso3c
-  ## AM - Q - what is country_iso3_alpha? 
+  # Tag domestic versus foreign fishing
   mutate(dwf = case_when(
     (artis_iso3 == country_iso3_alpha) ~ "domestic",
     TRUE ~ "foreign"
-  )) #%>% 
-  #select(-eez_1, -eez_2, )
+  )) %>% 
+  select(-eez_1, -eez_2, -eez)
+
   
 # Summary stats/figs on DWF
 prod_sau %>%
   group_by(year, dwf) %>% 
-  summarise(live_weight_t = sum(live_weight_t)) %>%
+  summarise(live_weight_t = sum(quantity)) %>%
   ggplot(aes(x = year, y = live_weight_t/1000000, fill = dwf)) +
   geom_area() +
   labs(x = "", y = "Landings (mil t, live weight)") +
@@ -62,8 +68,9 @@ prod_sau %>%
 
 prod_sau %>%
   filter(dwf == "foreign") %>%
+  rename(country_name_en = artis_country_name) %>% 
   group_by(country_name_en) %>%
-  summarise(total_dwf = sum(live_weight_t)) %>%
+  summarise(total_dwf = sum(quantity)) %>%
   filter(total_dwf > 1000000) %>%
   ungroup() %>%
   ggplot(aes(y = fct_reorder(country_name_en, total_dwf), 
