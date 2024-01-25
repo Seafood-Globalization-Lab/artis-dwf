@@ -1,7 +1,7 @@
 #' @export
-standardize_eez <- function(data, col_iso3, col_country_name) {
+standardize_sau_eez <- function(data, col_iso3, col_country_name) {
   
-  cleaned_baci <- data %>%
+  cleaned_sau <- data %>%
     mutate(artis_iso3 = case_when(
       # United States' territories----------------------------------------------
       .data[[col_iso3]] == "ASM" ~ "USA", # American Samoa
@@ -22,6 +22,7 @@ standardize_eez <- function(data, col_iso3, col_country_name) {
       .data[[col_iso3]] == "FLK" ~ "GBR", # Falkland Islands
       .data[[col_iso3]] == "IMN" ~ "GBR", # Isle of Man
       .data[[col_country_name]] == "Channel Islands" ~ "GBR", # Channel Islands does not have an ISO3 code
+      .data[[col_iso3]] == "SGS" ~ "GBR", # South Georgia & South Sandwich Islands
       # France's territories----------------------------------------------------
       .data[[col_iso3]] == "PYF" ~ "FRA", # French Polynesia
       .data[[col_iso3]] == "MYT" ~ "FRA", # Mayotte 
@@ -53,11 +54,15 @@ standardize_eez <- function(data, col_iso3, col_country_name) {
       .data[[col_iso3]] == "NFK" ~ "AUS", # Norfolk Island
       .data[[col_iso3]] == "CXR" ~ "AUS", # Christmas Island
       .data[[col_iso3]] == "CCK" ~ "AUS", # Cocos (keeling) Islands
+      .data[[col_iso3]] == "HMD" ~ "AUS", # Heard & McDonald Islands
       # Denmark's territories---------------------------------------------------
       .data[[col_iso3]] == "GRL" ~ "DNK", # Greenland
       .data[[col_iso3]] == "FRO" ~ "DNK", # Faroe Islands
       # Tanzania's territories--------------------------------------------------
       .data[[col_iso3]] == "EAZ" ~ "TZA", # Zanzibar
+      # Norway's territories--------------------------------------------------
+      .data[[col_iso3]] == "SJM" ~ "NOR", # Svalbard & Jan Mayen
+      .data[[col_iso3]] == "BVT" ~ "NOR", # Bouvet Island
       TRUE ~ .data[[col_iso3]]
     )) %>%
     # Cleaning country names------------------------------------------------------
@@ -100,5 +105,5 @@ standardize_eez <- function(data, col_iso3, col_country_name) {
       TRUE ~ artis_country_name
     ))
   
-  return(cleaned_baci)
+  return(cleaned_sau)
 }
