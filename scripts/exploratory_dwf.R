@@ -21,6 +21,7 @@ artis_sau <- read.csv("data/SAU_ARTIS_2010-2020.csv")
 # Only contains species & countries standardized SAU marine capture (not EEZ) 
 prod_sau <- read_csv("./data/standardized_sau_prod.csv")
 
+source(file.path("./scripts/standardize_sau.R"))
 # load data from ARTIS database
 # source("load_df_data.R")
 
@@ -29,6 +30,7 @@ prod_sau <- prod_sau %>%
   # Break apart EEZ column - identify ISO3 codes with one of the 3 eez columns
   separate(eez, into = c("eez_1", "eez_2"), sep = "\\(", remove = FALSE) %>%
   mutate(eez_2 = gsub("\\)", "", eez_2)) %>%
+  # create new cleaned eez column - eez_iso3 - from countrycode library names
   mutate(eez_iso3c = countrycode(eez, origin = "country.name", destination = "iso3c")) %>% 
   mutate(eez_iso3c = case_when(
     (!is.na(eez_iso3c)) ~ eez_iso3c, 
@@ -43,7 +45,7 @@ prod_sau <- prod_sau %>%
     TRUE ~ eez_iso3c
   )) %>%
   
-  # use ISO3 codes to generate standard country name column
+  # use cleaned ISO3 codes to generate standard country name column
   mutate(eez_current_name = countrycode(eez_iso3c, origin = "iso3c", destination = "country.name")) %>% 
   
   # adds artis_iso3 and artis_country_name columns
@@ -54,23 +56,36 @@ prod_sau <- prod_sau %>%
     (artis_iso3 == country_iso3_alpha) ~ "domestic",
     TRUE ~ "foreign"
   )) %>% 
-  select(-eez_1, -eez_2, -eez)
+  # remove columns only used for standardization
+  select(-eez_1, -eez_2, -eez) %>% 
+  # 
+  group_by(across(c(-quantity, eez, eez_current_name))) %>% 
+  summarize(live_weight_t = sum(quantity))
 
   
 # Summary stats/figs on DWF
+
+# prod_sau %>%
+#   group_by(artis_country_name, dwf) %>%
+#   summarise(live_weight_t = sum(quantity))
+
+# $live_weight_t replaced with $quantity
+
+# Landings x Year x (domestic vs foreign)
 prod_sau %>%
   group_by(year, dwf) %>% 
-  summarise(live_weight_t = sum(quantity)) %>%
+  summarise(live_weight_t = sum(live_weight_t)) %>%
   ggplot(aes(x = year, y = live_weight_t/1000000, fill = dwf)) +
   geom_area() +
   labs(x = "", y = "Landings (mil t, live weight)") +
   theme_bw()
 
+# Average Landings x Country
 prod_sau %>%
   filter(dwf == "foreign") %>%
   rename(country_name_en = artis_country_name) %>% 
-  group_by(country_name_en) %>%
-  summarise(total_dwf = sum(quantity)) %>%
+  group_by(country_iso3_alpha) %>%
+  summarise(total_dwf = sum(live_weight_t)) %>%
   filter(total_dwf > 1000000) %>%
   ungroup() %>%
   ggplot(aes(y = fct_reorder(country_name_en, total_dwf), 
@@ -79,42 +94,51 @@ prod_sau %>%
   labs(y = "", x = "Ave. Landings (mil t, live weight)") +
   theme_bw()
 
+# Top DWF fishing countries x Foreign landings x year
 prod_sau %>%
   filter(dwf == "foreign") %>%
+  rename(country_name_en = artis_country_name) %>%
   group_by(country_name_en) %>%
-  mutate(total_dwf = sum(live_weight_t)) %>%
+  mutate(total_dwf = sum(quantity)) %>%
   filter(total_dwf > 15000000) %>%
   group_by(year, country_name_en) %>% 
-  summarise(live_weight_t = sum(live_weight_t)) %>%
+  summarise(live_weight_t = sum(quantity)) %>%
   ggplot(aes(x = year, y = live_weight_t/1000000, fill = country_name_en)) +
   geom_area() +
-  labs(x = "", y = "Landings (mil t, live weight)", fill = "Fishing entity") +
+  labs(x = "", 
+       y = "Landings (mil t, live weight)", 
+       fill = "Fishing entity",
+       title = "Top countries landings from distant water fishing") +
   theme_bw()
 
 # Top species caught by DFW
 prod_sau %>%
   filter(dwf == "foreign") %>%
-  group_by(sciname) %>%
-  mutate(total_dwf = sum(live_weight_t)) %>%
+  group_by(SciName) %>%
+  mutate(total_dwf = sum(quantity)) %>%
   filter(total_dwf > 5000000) %>%
-  group_by(year, sciname) %>% 
-  summarise(live_weight_t = sum(live_weight_t)) %>%
-  ggplot(aes(x = year, y = live_weight_t/1000000, fill = sciname)) +
+  group_by(year, SciName) %>% 
+  summarise(live_weight_t = sum(quantity)) %>%
+  ggplot(aes(x = year, y = live_weight_t/1000000, fill = SciName)) +
   geom_area() +
-  labs(x = "", y = "Landings (mil t, live weight)", fill = "") +
+  labs(x = "", 
+       y = "Landings (mil t, live weight)", 
+       fill = "",
+       title = "Top species landings by distant water fishing") +
   theme_bw()
 
 prod_sau %>%
   nrow()
 
 prod_sau %>%
-  filter(live_weight_t < 0.1) %>%
+  filter(quantity < 0.1) %>%
   nrow()
 
+# 
 prod_sau_props <- prod_sau %>%
-  group_by(year, country_iso3_alpha, sciname, eez, eez_iso3c, dwf) %>%
-  summarise(live_weight_t = sum(live_weight_t)) %>%
-  group_by(year, country_iso3_alpha, sciname) %>%
+  group_by(year, country_iso3_alpha, SciName, artis_country_name, eez_iso3c, dwf) %>%
+  summarise(live_weight_t = sum(quantity)) %>%
+  group_by(year, country_iso3_alpha, SciName) %>%
   mutate(prop_by_eez = live_weight_t/sum(live_weight_t)) %>%
   select(-live_weight_t)
   
@@ -125,7 +149,7 @@ artis_eez <- artis_sau %>%
   left_join(prod_sau_props %>% 
               filter(year == 2019, 
                      country_iso3_alpha == "CHN"), 
-            by = c("year", "source_country_iso3c" = "country_iso3_alpha", "sciname")) %>%
+            by = c("year", "source_country_iso3c" = "country_iso3_alpha", "SciName")) %>%
   mutate(live_weight_t = live_weight_t*prop_by_eez)
 
 nrow(artis_eez) 
