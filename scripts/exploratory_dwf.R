@@ -63,7 +63,7 @@ prod_sau <- prod_sau %>%
                                         origin = "iso3c", 
                                         destination = "country.name")) %>% 
   
-  # adds artis_iso3 and artis_country_name columns
+  # adds artis_iso3 and catch_artis_country_name columns
   standardize_sau_eez("catch_eez_iso3c", "catch_eez_name") %>% 
   rename(catch_artis_iso3 = artis_iso3,
          catch_artis_country_name = artis_country_name) %>% 
@@ -77,7 +77,7 @@ prod_sau <- prod_sau %>%
   # remove columns only used for standardization process
   select(-catch_eez_1, -catch_eez_2, -catch_eez) %>% 
   
-  # aggregate catch quantity
+  # aggregate catch quantity records
   group_by(group_by(across(-quantity))) %>% 
   summarize(live_weight_t = sum(quantity))
 
@@ -89,33 +89,35 @@ prod_sau %>%
   summarise(live_weight_t = sum(live_weight_t)) %>%
   ggplot(aes(x = year, y = live_weight_t/1000000, fill = dwf)) +
   geom_area() +
-  labs(x = "", y = "Landings (mil t, live weight)") +
+  labs(x = "", 
+       y = "Landings (mil t, live weight)",
+       title = "Overall Domestic vs Foreign Landings") +
   theme_bw()
 
 # Average Landings x Country
 prod_sau %>%
   filter(dwf == "foreign") %>%
- # rename(country_name_en = artis_country_name) %>% 
-  group_by(artis_country_name) %>%
+  group_by(catch_artis_country_name) %>%
   summarise(total_dwf = sum(live_weight_t)) %>%
   filter(total_dwf > 1000000) %>%
   ungroup() %>%
-  ggplot(aes(y = fct_reorder(artis_country_name, total_dwf), 
+  ggplot(aes(y = fct_reorder(catch_artis_country_name, total_dwf), 
              x = total_dwf/(1000000*length(unique(prod_sau$year))))) +
   geom_bar(stat = "identity") +
-  labs(y = "", x = "Ave. Landings (mil t, live weight)") +
+  labs(y = "", 
+       x = "Ave. Landings (mil t, live weight)",
+       title = "") +
   theme_bw()
 
 # Top DWF fishing countries x Foreign landings x year
 prod_sau %>%
   filter(dwf == "foreign") %>%
-  #rename(country_name_en = artis_country_name) %>%
-  group_by(artis_country_name) %>%
+  group_by(catch_artis_country_name) %>%
   mutate(total_dwf = sum(live_weight_t)) %>%
   filter(total_dwf > 15000000) %>%
-  group_by(year, artis_country_name) %>% 
+  group_by(year, catch_artis_country_name) %>% 
   summarise(live_weight_t = sum(live_weight_t)) %>%
-  ggplot(aes(x = year, y = live_weight_t/1000000, fill = artis_country_name)) +
+  ggplot(aes(x = year, y = live_weight_t/1000000, fill = catch_artis_country_name)) +
   geom_area() +
   labs(x = "", 
        y = "Landings (mil t, live weight)", 
@@ -139,29 +141,35 @@ prod_sau %>%
        title = "Top species landings by distant water fishing") +
   theme_bw()
 
+# number of observations
 prod_sau %>%
   nrow()
 
+# number of low production observations
 prod_sau %>%
   filter(live_weight_t < 0.1) %>%
   nrow()
 
-# 
+# Proportion of catch by 
 prod_sau_props <- prod_sau %>%
-  group_by(year, country_iso3_alpha, SciName, artis_country_name, catch_eez_iso3c, dwf) %>%
+  # aggregate catch amount - disregard habitat, production method, sector, end use
+  group_by(year, prod_iso3, SciName, 
+           catch_artis_country_name, catch_artis_iso3, dwf) %>%
   summarise(live_weight_t = sum(live_weight_t)) %>%
-  group_by(year, country_iso3_alpha, SciName) %>%
+  group_by(year, prod_iso3, SciName) %>% # not followed by summarise() - could confuse mutate results
   mutate(prop_by_catch_eez = live_weight_t/sum(live_weight_t)) %>%
   select(-live_weight_t)
   
 # Disaggregate ARTIS by EEZ for China 2019
 artis_eez <- artis_sau %>% 
-  filter(habitat == "marine", method == "capture", 
-         year == 2019, source_country_iso3c == "CHN") %>%
+  filter(habitat == "marine", 
+         method == "capture", 
+         year == 2019, 
+         source_country_iso3c == "CHN") %>%
   left_join(prod_sau_props %>% 
               filter(year == 2019, 
-                     country_iso3_alpha == "CHN"), 
-            by = c("year", "source_country_iso3c" = "country_iso3_alpha", "SciName")) %>%
+                     prod_iso3 == "CHN"), 
+            by = c("year", "source_country_iso3c" = "prod_iso3", "SciName")) %>%
   mutate(live_weight_t = live_weight_t*prop_by_eez)
 
 nrow(artis_eez) 
@@ -187,8 +195,8 @@ artis_eez <- artis_sau %>%
          year == 2019, source_country_iso3c == "ESP") %>%
   left_join(prod_sau_props %>% 
               filter(year == 2019, 
-                     country_iso3_alpha == "ESP"), 
-            by = c("year", "source_country_iso3c" = "country_iso3_alpha", "sciname")) %>%
+                     prod_iso3 == "ESP"), 
+            by = c("year", "source_country_iso3c" = "prod_iso3", "sciname")) %>%
   mutate(live_weight_t = live_weight_t*prop_by_eez)
 
 nrow(artis_eez) 
