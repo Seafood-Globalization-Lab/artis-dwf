@@ -23,8 +23,6 @@ artis_sau <- read.csv("data/SAU_ARTIS_2010-2020.csv")
 prod_sau <- read_csv("./data/standardized_sau_prod.csv")
 
 source(file.path("./scripts/standardize_sau.R"))
-# load data from ARTIS database
-# source("load_df_data.R")
 
 # Clean Data -------------------------------------------------
 prod_sau <- prod_sau %>%
@@ -34,8 +32,11 @@ prod_sau <- prod_sau %>%
         catch_eez = eez) %>% 
   
   # Break apart catch_eez column - identify ISO3 codes with one of the 3 eez columns
-  separate(catch_eez, into = c("catch_eez_1", "catch_eez_2"), sep = "\\(", remove = FALSE) %>%
+  separate(catch_eez, 
+           into = c("catch_eez_1", "catch_eez_2"), 
+           sep = "\\(", remove = FALSE) %>%
   mutate(catch_eez_2 = gsub("\\)", "", catch_eez_2)) %>%
+  
   # create new cleaned eez column - eez_iso3 - from countrycode library names
   mutate(catch_eez_iso3c = countrycode(catch_eez, 
                                  origin = "country.name", 
@@ -64,26 +65,23 @@ prod_sau <- prod_sau %>%
   
   # adds artis_iso3 and artis_country_name columns
   standardize_sau_eez("catch_eez_iso3c", "catch_eez_name") %>% 
+  rename(catch_artis_iso3 = artis_iso3,
+         catch_artis_country_name = artis_country_name) %>% 
 
   # Tag domestic versus foreign fishing
   mutate(dwf = case_when(
-    (artis_iso3 == prod_iso3) ~ "domestic",
+    (catch_artis_iso3 == prod_iso3) ~ "domestic",
     TRUE ~ "foreign"
   )) %>% 
-  # remove columns only used for standardization
+  
+  # remove columns only used for standardization process
   select(-catch_eez_1, -catch_eez_2, -catch_eez) %>% 
-  # 
+  
+  # aggregate catch quantity
   group_by(group_by(across(-quantity))) %>% 
   summarize(live_weight_t = sum(quantity))
 
-
 # Summary Stats & Figures -------------------------------------------------
-
-# prod_sau %>%
-#   group_by(artis_country_name, dwf) %>%
-#   summarise(live_weight_t = sum(quantity))
-
-# $live_weight_t replaced with $quantity
 
 # Landings x Year x (domestic vs foreign)
 prod_sau %>%
