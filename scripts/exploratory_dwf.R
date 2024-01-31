@@ -1,6 +1,6 @@
 # ARTIS DWF Update
 
-# NOTES:
+# Notes -------------------------------------------------
 # - Standardize EEZ territories (done)
 # - Find out what happened to catch on the high seas
 # - Identify source of many-to-many matching issue
@@ -9,12 +9,13 @@
 # - Create country profiles for Oceana + select countries of interest
 # - Interest in W Africa pelagics and humboldt squid
 
-# Load packages
+# Load Packages -------------------------------------------------
 library(tidyverse)
 library(countrycode)
 library(exploreARTIS)
 
-# Load data - existing SAU data in ARTIS
+# Load Data & Scripts -------------------------------------------------
+#existing SAU data in ARTIS
 artis_sau <- read.csv("data/SAU_ARTIS_2010-2020.csv")
 
 # load new SAU data - AM from ARTIS repo ./QA/outputs/
@@ -25,45 +26,58 @@ source(file.path("./scripts/standardize_sau.R"))
 # load data from ARTIS database
 # source("load_df_data.R")
 
-# Clean data 
+# Clean Data -------------------------------------------------
 prod_sau <- prod_sau %>%
-  # Break apart EEZ column - identify ISO3 codes with one of the 3 eez columns
-  separate(eez, into = c("eez_1", "eez_2"), sep = "\\(", remove = FALSE) %>%
-  mutate(eez_2 = gsub("\\)", "", eez_2)) %>%
+  
+  # clarify column names
+  rename(prod_iso3 = country_iso3_alpha,
+        catch_eez = eez) %>% 
+  
+  # Break apart catch_eez column - identify ISO3 codes with one of the 3 eez columns
+  separate(catch_eez, into = c("catch_eez_1", "catch_eez_2"), sep = "\\(", remove = FALSE) %>%
+  mutate(catch_eez_2 = gsub("\\)", "", catch_eez_2)) %>%
   # create new cleaned eez column - eez_iso3 - from countrycode library names
-  mutate(eez_iso3c = countrycode(eez, origin = "country.name", destination = "iso3c")) %>% 
-  mutate(eez_iso3c = case_when(
-    (!is.na(eez_iso3c)) ~ eez_iso3c, 
-    (is.na(eez_iso3c) ~ countrycode(eez_1, origin = "country.name", destination = "iso3c")))) %>%
-  mutate(eez_iso3c = case_when(
-    (!is.na(eez_iso3c)) ~ eez_iso3c, 
-    (is.na(eez_iso3c) ~ countrycode(eez_2, origin = "country.name", destination = "iso3c")))) %>%
+  mutate(catch_eez_iso3c = countrycode(catch_eez, 
+                                 origin = "country.name", 
+                                 destination = "iso3c")) %>% 
+  mutate(catch_eez_iso3c = case_when(
+    (!is.na(catch_eez_iso3c)) ~ catch_eez_iso3c, 
+    (is.na(catch_eez_iso3c) ~ countrycode(catch_eez_1, 
+                                    origin = "country.name", 
+                                    destination = "iso3c")))) %>%
+  mutate(catch_eez_iso3c = case_when(
+    (!is.na(catch_eez_iso3c)) ~ catch_eez_iso3c, 
+    (is.na(catch_eez_iso3c) ~ countrycode(catch_eez_2, 
+                                    origin = "country.name", 
+                                    destination = "iso3c")))) %>%
   
   # correct single instance 
-  mutate(eez_iso3c = case_when(
-    (eez == "US Virgin Isl.") ~ "USA",
-    TRUE ~ eez_iso3c
+  mutate(catch_eez_iso3c = case_when(
+    (catch_eez == "US Virgin Isl.") ~ "USA",
+    TRUE ~ catch_eez_iso3c
   )) %>%
   
   # use cleaned ISO3 codes to generate standard country name column
-  mutate(eez_current_name = countrycode(eez_iso3c, origin = "iso3c", destination = "country.name")) %>% 
+  mutate(catch_eez_name = countrycode(catch_eez_iso3c, 
+                                        origin = "iso3c", 
+                                        destination = "country.name")) %>% 
   
   # adds artis_iso3 and artis_country_name columns
-  standardize_sau_eez("eez_iso3c", "eez_current_name") %>% 
+  standardize_sau_eez("catch_eez_iso3c", "catch_eez_name") %>% 
 
   # Tag domestic versus foreign fishing
   mutate(dwf = case_when(
-    (artis_iso3 == country_iso3_alpha) ~ "domestic",
+    (artis_iso3 == prod_iso3) ~ "domestic",
     TRUE ~ "foreign"
   )) %>% 
   # remove columns only used for standardization
-  select(-eez_1, -eez_2, -eez) %>% 
+  select(-catch_eez_1, -catch_eez_2, -catch_eez) %>% 
   # 
-  group_by(across(c(-quantity, eez, eez_current_name))) %>% 
+  group_by(group_by(across(-quantity))) %>% 
   summarize(live_weight_t = sum(quantity))
 
-  
-# Summary stats/figs on DWF
+
+# Summary Stats & Figures -------------------------------------------------
 
 # prod_sau %>%
 #   group_by(artis_country_name, dwf) %>%
@@ -83,12 +97,12 @@ prod_sau %>%
 # Average Landings x Country
 prod_sau %>%
   filter(dwf == "foreign") %>%
-  rename(country_name_en = artis_country_name) %>% 
-  group_by(country_iso3_alpha) %>%
+ # rename(country_name_en = artis_country_name) %>% 
+  group_by(artis_country_name) %>%
   summarise(total_dwf = sum(live_weight_t)) %>%
   filter(total_dwf > 1000000) %>%
   ungroup() %>%
-  ggplot(aes(y = fct_reorder(country_name_en, total_dwf), 
+  ggplot(aes(y = fct_reorder(artis_country_name, total_dwf), 
              x = total_dwf/(1000000*length(unique(prod_sau$year))))) +
   geom_bar(stat = "identity") +
   labs(y = "", x = "Ave. Landings (mil t, live weight)") +
@@ -97,13 +111,13 @@ prod_sau %>%
 # Top DWF fishing countries x Foreign landings x year
 prod_sau %>%
   filter(dwf == "foreign") %>%
-  rename(country_name_en = artis_country_name) %>%
-  group_by(country_name_en) %>%
-  mutate(total_dwf = sum(quantity)) %>%
+  #rename(country_name_en = artis_country_name) %>%
+  group_by(artis_country_name) %>%
+  mutate(total_dwf = sum(live_weight_t)) %>%
   filter(total_dwf > 15000000) %>%
-  group_by(year, country_name_en) %>% 
-  summarise(live_weight_t = sum(quantity)) %>%
-  ggplot(aes(x = year, y = live_weight_t/1000000, fill = country_name_en)) +
+  group_by(year, artis_country_name) %>% 
+  summarise(live_weight_t = sum(live_weight_t)) %>%
+  ggplot(aes(x = year, y = live_weight_t/1000000, fill = artis_country_name)) +
   geom_area() +
   labs(x = "", 
        y = "Landings (mil t, live weight)", 
@@ -115,10 +129,10 @@ prod_sau %>%
 prod_sau %>%
   filter(dwf == "foreign") %>%
   group_by(SciName) %>%
-  mutate(total_dwf = sum(quantity)) %>%
+  mutate(total_dwf = sum(live_weight_t)) %>%
   filter(total_dwf > 5000000) %>%
   group_by(year, SciName) %>% 
-  summarise(live_weight_t = sum(quantity)) %>%
+  summarise(live_weight_t = sum(live_weight_t)) %>%
   ggplot(aes(x = year, y = live_weight_t/1000000, fill = SciName)) +
   geom_area() +
   labs(x = "", 
@@ -131,15 +145,15 @@ prod_sau %>%
   nrow()
 
 prod_sau %>%
-  filter(quantity < 0.1) %>%
+  filter(live_weight_t < 0.1) %>%
   nrow()
 
 # 
 prod_sau_props <- prod_sau %>%
-  group_by(year, country_iso3_alpha, SciName, artis_country_name, eez_iso3c, dwf) %>%
-  summarise(live_weight_t = sum(quantity)) %>%
+  group_by(year, country_iso3_alpha, SciName, artis_country_name, catch_eez_iso3c, dwf) %>%
+  summarise(live_weight_t = sum(live_weight_t)) %>%
   group_by(year, country_iso3_alpha, SciName) %>%
-  mutate(prop_by_eez = live_weight_t/sum(live_weight_t)) %>%
+  mutate(prop_by_catch_eez = live_weight_t/sum(live_weight_t)) %>%
   select(-live_weight_t)
   
 # Disaggregate ARTIS by EEZ for China 2019
