@@ -67,19 +67,23 @@ prod_sau <- prod_sau %>%
   standardize_sau_eez("catch_eez_iso3c", "catch_eez_name") %>% 
   rename(catch_artis_iso3 = artis_iso3,
          catch_artis_country_name = artis_country_name) %>% 
-
-  # Tag domestic versus foreign fishing
-  mutate(dwf = case_when(
-    (catch_artis_iso3 == prod_iso3) ~ "domestic",
-    TRUE ~ "foreign"
-  )) %>% 
   
   # remove columns only used for standardization process
   select(-catch_eez_1, -catch_eez_2, -catch_eez) %>% 
   
   # aggregate catch quantity records
-  group_by(group_by(across(-quantity))) %>% 
-  summarize(live_weight_t = sum(quantity))
+  # group_by(group_by(across(-quantity))) %>% 
+  # summarize(live_weight_t = sum(quantity)) %>% 
+  group_by(year, prod_iso3, SciName, prod_method, 
+           habitat, catch_artis_iso3, catch_artis_country_name) %>% 
+  summarise(live_weight_t = sum(quantity)) %>% 
+  ungroup() %>% 
+  
+  # Tag domestic versus foreign fishing
+  mutate(dwf = case_when(
+    (catch_artis_iso3 == prod_iso3) ~ "domestic",
+    TRUE ~ "foreign"
+  ))
 
 # Summary Stats & Figures -------------------------------------------------
 
@@ -150,16 +154,20 @@ prod_sau %>%
   filter(live_weight_t < 0.1) %>%
   nrow()
 
-# Proportion of catch by 
+# Join SAU & ARTIS data ---------------------------------------------------------
+
+# Proportion of catch by ...
 prod_sau_props <- prod_sau %>%
   # aggregate catch amount - disregard habitat, production method, sector, end use
   group_by(year, prod_iso3, SciName, 
            catch_artis_country_name, catch_artis_iso3, dwf) %>%
-  summarise(live_weight_t = sum(live_weight_t)) %>%
-  group_by(year, prod_iso3, SciName) %>% # not followed by summarise() - could confuse mutate results
+  summarise(live_weight_t = sum(live_weight_t)) %>% 
+  # calculate prop catch over each eez - does not contract df
+  # needs to be exactly what we are joining by
+  group_by(year, prod_iso3, SciName) %>%
   mutate(prop_by_catch_eez = live_weight_t/sum(live_weight_t)) %>%
   select(-live_weight_t)
-  
+
 # Disaggregate ARTIS by EEZ for China 2019
 artis_eez <- artis_sau %>% 
   filter(habitat == "marine", 
@@ -169,8 +177,19 @@ artis_eez <- artis_sau %>%
   left_join(prod_sau_props %>% 
               filter(year == 2019, 
                      prod_iso3 == "CHN"), 
-            by = c("year", "source_country_iso3c" = "prod_iso3", "SciName")) %>%
-  mutate(live_weight_t = live_weight_t*prop_by_eez)
+            by = c("year", "source_country_iso3c" = "prod_iso3", "sciname" = "SciName")) %>%
+  mutate(live_weight_t = live_weight_t*prop_by_catch_eez)
+# many-to-many is what we expect here - one row of artis_sau correlates with multiple prod_sau eez
+
+# landings mass check - filter
+artis_sau_check <- artis_sau %>% 
+  filter(habitat == "marine", 
+         method == "capture", 
+         year == 2019, 
+         source_country_iso3c == "CHN")
+
+# e^-6 or e^-9 considered 0 - haven't gained or lost any mass
+sum(artis_eez$live_weight_t) - sum(artis_sau_check$live_weight_t)
 
 nrow(artis_eez) 
 
@@ -181,10 +200,18 @@ artis_eez %>%
   arrange(desc(live_weight_t)) %>%
   print(n = 25)
 
+# Sanky Flows -----------------------------------------------------------------
+
+# 
+artis_eez %>%
+ # select(-source_country_iso3c) %>%
+ # rename("source_country_iso3c" = "catch_artis_iso3") %>%
+  filter(sciname == "illex argentinus") %>%
+  plot_sankey()
 
 artis_eez %>%
   select(-source_country_iso3c) %>%
-  rename("source_country_iso3c" = "eez_iso3c") %>%
+  rename("source_country_iso3c" = "catch_artis_iso3") %>%
   filter(sciname == "illex argentinus") %>%
   plot_sankey()
   
