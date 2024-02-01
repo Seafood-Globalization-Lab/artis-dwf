@@ -156,30 +156,32 @@ prod_sau %>%
 
 # Join SAU & ARTIS data ---------------------------------------------------------
 
-# Proportion of catch by ...
+# Proportion of landings by country flag captured in recorded source eezs
 prod_sau_props <- prod_sau %>%
-  # aggregate catch amount - disregard habitat, production method, sector, end use
+  # aggregate landings amount - disregard habitat, production method, sector, end use
   group_by(year, prod_iso3, SciName, 
            catch_artis_country_name, catch_artis_iso3, dwf) %>%
   summarise(live_weight_t = sum(live_weight_t)) %>% 
-  # calculate prop catch over each eez - does not contract df
-  # needs to be exactly what we are joining by
-  group_by(year, prod_iso3, SciName) %>%
+  # calculate prop catch over each source eez - does not contract df over 2nd group_by()
+  group_by(year, prod_iso3, SciName) %>% # needs to be exactly what data is joining by after
   mutate(prop_by_catch_eez = live_weight_t/sum(live_weight_t)) %>%
   select(-live_weight_t)
 
-# Disaggregate ARTIS by EEZ for China 2019
-artis_eez <- artis_sau %>% 
+# Disaggregate ARTIS by EEZ of catch - China 2019
+artis_eez_chn <- artis_sau %>% 
+  # prod_sau is inherently only marine capture - match artis_sau data
   filter(habitat == "marine", 
          method == "capture", 
          year == 2019, 
          source_country_iso3c == "CHN") %>%
+  # pull prod_sau_props data for year year, source country, and species
   left_join(prod_sau_props %>% 
               filter(year == 2019, 
                      prod_iso3 == "CHN"), 
             by = c("year", "source_country_iso3c" = "prod_iso3", "sciname" = "SciName")) %>%
+  # recalculate live_weight_t catch - each trade and product record gets split apart by the number of catch eez from prod_sau_props - essentially assigning a probability a product was caught in a specific eez. 
   mutate(live_weight_t = live_weight_t*prop_by_catch_eez)
-# many-to-many is what we expect here - one row of artis_sau correlates with multiple prod_sau eez
+# many-to-many warning is what we expect here - one row of artis_sau correlates with multiple prod_sau eez
 
 # landings mass check - filter
 artis_sau_check <- artis_sau %>% 
@@ -189,11 +191,12 @@ artis_sau_check <- artis_sau %>%
          source_country_iso3c == "CHN")
 
 # e^-6 or e^-9 considered 0 - haven't gained or lost any mass
-sum(artis_eez$live_weight_t) - sum(artis_sau_check$live_weight_t)
+sum(artis_eez_chn$live_weight_t) - sum(artis_sau_check$live_weight_t)
 
-nrow(artis_eez) 
+nrow(artis_eez_chn) 
 
-artis_eez %>% 
+# print top 25
+artis_eez_chn %>% 
   filter(dwf == "foreign") %>%
   group_by(sciname) %>%
   summarise(live_weight_t = sum(live_weight_t)) %>%
@@ -203,13 +206,13 @@ artis_eez %>%
 # Sanky Flows -----------------------------------------------------------------
 
 # 
-artis_eez %>%
+artis_eez_chn %>%
  # select(-source_country_iso3c) %>%
  # rename("source_country_iso3c" = "catch_artis_iso3") %>%
   filter(sciname == "illex argentinus") %>%
   plot_sankey()
 
-artis_eez %>%
+artis_eez_chn %>%
   select(-source_country_iso3c) %>%
   rename("source_country_iso3c" = "catch_artis_iso3") %>%
   filter(sciname == "illex argentinus") %>%
@@ -217,7 +220,7 @@ artis_eez %>%
   
 
 # Disaggregate ARTIS by EEZ for Spain 2019
-artis_eez <- artis_sau %>% 
+artis_eez_esp <- artis_sau %>% 
   filter(habitat == "marine", method == "capture", 
          year == 2019, source_country_iso3c == "ESP") %>%
   left_join(prod_sau_props %>% 
@@ -226,16 +229,16 @@ artis_eez <- artis_sau %>%
             by = c("year", "source_country_iso3c" = "prod_iso3", "sciname")) %>%
   mutate(live_weight_t = live_weight_t*prop_by_eez)
 
-nrow(artis_eez) 
+nrow(artis_eez_esp) 
 
-artis_eez %>% 
+artis_eez_esp %>% 
   filter(dwf == "foreign") %>%
   group_by(sciname) %>%
   summarise(live_weight_t = sum(live_weight_t)) %>%
   arrange(desc(live_weight_t)) %>%
   print(n = 25)
   
-artis_eez %>%
+artis_eez_esp %>%
   select(-source_country_iso3c) %>%
   rename("source_country_iso3c" = "eez_iso3c") %>%
   filter(sciname == "prionace glauca") %>%
