@@ -167,6 +167,9 @@ prod_sau_props <- prod_sau %>%
   mutate(prop_by_catch_eez = live_weight_t/sum(live_weight_t)) %>%
   select(-live_weight_t)
 
+
+# Explore - China ---------------------------------------------------------
+
 # Disaggregate ARTIS by EEZ of catch - China 2019
 artis_eez_chn <- artis_sau %>% 
   # prod_sau is inherently only marine capture - match artis_sau data
@@ -178,10 +181,12 @@ artis_eez_chn <- artis_sau %>%
   left_join(prod_sau_props %>% 
               filter(year == 2019, 
                      prod_iso3 == "CHN"), 
-            by = c("year", "source_country_iso3c" = "prod_iso3", "sciname" = "SciName")) %>%
+            by = c("year", 
+                   "source_country_iso3c" = "prod_iso3", 
+                   "sciname" = "SciName")) %>%
   # recalculate live_weight_t catch - each trade and product record gets split apart by the number of catch eez from prod_sau_props - essentially assigning a probability a product was caught in a specific eez. 
   mutate(live_weight_t = live_weight_t*prop_by_catch_eez)
-# many-to-many warning is what we expect here - one row of artis_sau correlates with multiple prod_sau eez
+  # many-to-many warning is what we expect here - one row of artis_sau correlates with multiple prod_sau eez
 
 # landings mass check - filter
 artis_sau_check <- artis_sau %>% 
@@ -203,41 +208,48 @@ artis_eez_chn %>%
   arrange(desc(live_weight_t)) %>%
   print(n = 25)
 
-# Sanky Flows -----------------------------------------------------------------
-
-# 
+# plot artis_sau$source_country_iso3c (without catch eez information)
 artis_eez_chn %>%
  # select(-source_country_iso3c) %>%
  # rename("source_country_iso3c" = "catch_artis_iso3") %>%
   filter(sciname == "illex argentinus") %>%
   plot_sankey()
 
+# plot with catch eez information
 artis_eez_chn %>%
   select(-source_country_iso3c) %>%
   rename("source_country_iso3c" = "catch_artis_iso3") %>%
   filter(sciname == "illex argentinus") %>%
   plot_sankey()
   
+# Explore - Spain ---------------------------------------------------------
 
 # Disaggregate ARTIS by EEZ for Spain 2019
+# see China above for more detail
 artis_eez_esp <- artis_sau %>% 
-  filter(habitat == "marine", method == "capture", 
-         year == 2019, source_country_iso3c == "ESP") %>%
+  filter(habitat == "marine", 
+         method == "capture", 
+         year == 2019, 
+         source_country_iso3c == "ESP") %>%
   left_join(prod_sau_props %>% 
               filter(year == 2019, 
                      prod_iso3 == "ESP"), 
-            by = c("year", "source_country_iso3c" = "prod_iso3", "sciname")) %>%
-  mutate(live_weight_t = live_weight_t*prop_by_eez)
+            by = c("year", 
+                   "source_country_iso3c" = "prod_iso3", 
+                   "sciname" = "SciName")) %>%
+  mutate(live_weight_t = live_weight_t*prop_by_catch_eez)
 
 nrow(artis_eez_esp) 
 
+# print top 25 species live weights
 artis_eez_esp %>% 
   filter(dwf == "foreign") %>%
   group_by(sciname) %>%
   summarise(live_weight_t = sum(live_weight_t)) %>%
   arrange(desc(live_weight_t)) %>%
   print(n = 25)
-  
+
+# plot sankey
 artis_eez_esp %>%
   select(-source_country_iso3c) %>%
   rename("source_country_iso3c" = "eez_iso3c") %>%
@@ -245,7 +257,8 @@ artis_eez_esp %>%
   plot_sankey()
 
 
-# Fishmeal analysis
+# Fishmeal analysis -------------------------------------------------------
+
 # Top species exported in fishmeal codes for top 10 fishmeal exporting countries 
 # in addition to any Oceana countries of interest not in top 10 
 # (Belize, Brazil, Canada, Chile, Mexico, the Philippines, Peru, the UK, USA, Spain, Malaysia, Ghana, Senegal)
