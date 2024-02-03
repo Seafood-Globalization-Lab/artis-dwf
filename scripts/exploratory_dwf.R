@@ -24,12 +24,6 @@ prod_sau <- read_csv("./data/standardized_sau_prod.csv")
 
 source(file.path("./scripts/standardize_sau.R"))
 
-
-# Set Year ----------------------------------------------------
-
-# set year for following analysis
-year_int <- 2019
-
 # Clean Data -------------------------------------------------
 prod_sau <- prod_sau %>%
   
@@ -91,7 +85,7 @@ prod_sau <- prod_sau %>%
     TRUE ~ "foreign"
   ))
 
-# Summary Stats & Figures -------------------------------------------------
+# Summary Stats & Figures ----------------------------------------------
 
 # Landings x Year x (domestic vs foreign)
 prod_sau %>%
@@ -160,7 +154,7 @@ prod_sau %>%
   filter(live_weight_t < 0.1) %>%
   nrow()
 
-# Join Prod SAU & ARTIS SAU data -----------------------------------------------
+# Join Prod SAU & ARTIS SAU data ---------------------------------------------
 
 # Proportion of landings by country flag captured in recorded source eezs
 prod_sau_props <- prod_sau %>%
@@ -179,11 +173,9 @@ prod_sau_props <- prod_sau %>%
 artis_eez <- artis_sau %>% 
   # prod_sau is inherently only marine capture - match artis_sau data
   filter(habitat == "marine", 
-         method == "capture", 
-         year == year_int) %>%
+         method == "capture") %>%
   # pull prod_sau_props data for year year, source country, and species
-  left_join(prod_sau_props %>% 
-              filter(year == year_int), 
+  left_join(prod_sau_props, 
             by = c("year", 
                    "source_country_iso3c" = "prod_iso3", 
                    "sciname" = "SciName")) %>%
@@ -191,12 +183,18 @@ artis_eez <- artis_sau %>%
   mutate(live_weight_t = live_weight_t*prop_by_catch_eez)
 # many-to-many warning is what we expect here - one row of artis_sau correlates with multiple prod_sau eez
 
-# Explore - China ---------------------------------------------------------
+# Set Year ----------------------------------------------------
+
+# set year for following analysis
+year_int <- 2019
+
+# China Analysis ------------------------------------------------------
 
 # Filter for China
 artis_eez_chn <- artis_eez %>% 
   # prod_sau is inherently only marine capture - match artis_sau data
-  filter(source_country_iso3c == "CHN")
+  filter(source_country_iso3c == "CHN",
+         year == year_int)
 
 # landings mass check - filter
 artis_sau_check <- artis_sau %>% 
@@ -232,11 +230,12 @@ artis_eez_chn %>%
   filter(sciname == "illex argentinus") %>%
   plot_sankey()
   
-# Explore - Spain ---------------------------------------------------------
+# Spain Analysis -------------------------------------------------------
 
 # Filter for Spain
-artis_eez_esp2 <- artis_eez %>% 
-  filter(source_country_iso3c == "ESP")
+artis_eez_esp <- artis_eez %>% 
+  filter(source_country_iso3c == "ESP",
+         year == year_int)
 
 nrow(artis_eez_esp) 
 
@@ -255,27 +254,13 @@ artis_eez_esp %>%
   filter(sciname == "prionace glauca") %>%
   plot_sankey()
 
-
-# Fishmeal analysis -------------------------------------------------------
+# Fishmeal analysis ----------------------------------------------------
 
 # Top species exported in fishmeal codes for top 10 fishmeal exporting countries 
 # in addition to any Oceana countries of interest not in top 10 
 # (Belize, Brazil, Canada, Chile, Mexico, the Philippines, Peru, the UK, USA, Spain, Malaysia, Ghana, Senegal)
 
-artis_eez_esp <- artis_sau %>% 
-  filter(habitat == "marine", 
-         method == "capture", 
-         year == 2019, 
-         source_country_iso3c == "ESP") %>%
-  left_join(prod_sau_props %>% 
-              filter(year == 2019, 
-                     prod_iso3 == "ESP"), 
-            by = c("year", 
-                   "source_country_iso3c" = "prod_iso3", 
-                   "sciname" = "SciName")) %>%
-  mutate(live_weight_t = live_weight_t*prop_by_catch_eez)
-
-artis_fmfo_ts <- artis %>% 
+artis_fmfo_sum <- artis_eez %>% 
   mutate(food_or_fmfo = case_when(
     hs6 == "230120" ~ "fishmeal",
     hs6 != "230120" ~ "nonfishmeal"
@@ -283,30 +268,52 @@ artis_fmfo_ts <- artis %>%
   group_by(year, food_or_fmfo) %>%
   summarise(live_weight_t = sum(live_weight_t, na.rm = TRUE)) 
 
+artis_fmfo <- artis_eez %>% 
+  mutate(food_or_fmfo = case_when(
+    hs6 == "230120" ~ "fishmeal",
+    hs6 != "230120" ~ "nonfishmeal"
+  )) %>% 
+  filter(food_or_fmfo == "fishmeal") %>% 
+  select(-source_country_iso3c) %>%
+  rename("source_country_iso3c" = "catch_artis_iso3")
+
 # Top fishmeal exporting countries
 top_10_fm_exporters <- artis_fmfo %>% 
   group_by(source_country_iso3c) %>% 
   summarise(live_weight_t = sum(live_weight_t, na.rm = TRUE)) %>%
-  slice_max(order_by = live_weight_t, n = 10) %>%
+  slice_max(order_by = live_weight_t, 
+            n = 10) %>%
   pull(source_country_iso3c)
+
+# AM 2024-02-02
+# do not know where sciname_metadata.csv came from
+# see on Github repo --> https://github.com/jagephart/ms-seafood-globalization/blob/09267a9a530969faa4a89b35622b5104e15a4693/prelim_results.Rmd#L81
+
+# Can proceed with scinames already in dataset
 
 artis_fmfo %>%
   filter(source_country_iso3c %in% top_10_fm_exporters) %>%
-  left_join(sciname_metadata %>%
-              select(sciname, common_name), by = "sciname") %>%
-  plot_ts(artis_var = "common_name", facet_variable = "source_country_iso3c", facet_values = 10, 
+  # left_join(sciname_metadata %>%
+  #             select(sciname, common_name), 
+  #           by = "sciname") %>%
+  plot_ts(artis_var = "sciname", 
+          # source_country_iso3c is same as catch_artis_country_name
+          facet_variable = "catch_artis_country_name", 
+          facet_values = 10, 
           prop_flow_cutoff = 0.1)
 
 additional_fm_exporters <- c("BEL", "BRA", "CAN", "CHL", "MEX", "PHL",
                              "PER", "GBR", "USA", "ESP", "MYS", "GHA", "SEN") 
-
+# only keep exporters not already represented in top 10
 additional_fm_exporters <- additional_fm_exporters[!(additional_fm_exporters %in% top_10_fm_exporters)]
 
 artis_fmfo %>%
   filter(source_country_iso3c %in% additional_fm_exporters) %>%
-  left_join(sciname_metadata %>%
-              select(sciname, common_name), by = "sciname") %>%
-  plot_ts(artis_var = "common_name", facet_variable = "source_country_iso3c", facet_values = 10, 
+  # left_join(sciname_metadata %>%
+  #             select(sciname, common_name), by = "sciname") %>%
+  plot_ts(artis_var = "sciname", 
+          facet_variable = "catch_artis_country_name", 
+          facet_values = 10, 
           prop_flow_cutoff = 0.15)
 
 # Top importers
@@ -318,31 +325,45 @@ top_10_fm_importers <- artis_fmfo %>%
 
 artis_fmfo %>%
   filter(importer_iso3c %in% top_10_fm_importers) %>%
-  left_join(sciname_metadata %>%
-              select(sciname, common_name), by = "sciname") %>%
-  plot_ts(artis_var = "common_name", facet_variable = "importer_iso3c", facet_values = 10, 
+  # left_join(sciname_metadata %>%
+  #             select(sciname, common_name), by = "sciname") %>%
+  plot_ts(artis_var = "sciname", 
+          facet_variable = "importer_iso3c", 
+          facet_values = 10, 
           prop_flow_cutoff = 0.1)
 
 additional_fm_importers <- c("BEL", "BRA", "CAN", "CHL", "MEX", "PHL",
                              "PER", "GBR", "USA", "ESP", "MYS", "GHA", "SEN") 
-
+# only keep importers not already represented in top 10
 additional_fm_importers <- additional_fm_importers[!(additional_fm_importers %in% top_10_fm_importers)]
 
 artis_fmfo %>%
   filter(importer_iso3c %in% additional_fm_importers) %>%
-  left_join(sciname_metadata %>%
-              select(sciname, common_name), by = "sciname") %>%
-  plot_ts(artis_var = "common_name", facet_variable = "importer_iso3c", facet_values = 12, 
+  # left_join(sciname_metadata %>%
+  #             select(sciname, common_name), by = "sciname") %>%
+  plot_ts(artis_var = "sciname", 
+          facet_variable = "importer_iso3c", 
+          facet_values = 12, 
           prop_flow_cutoff = 0.1)
 
 # Top importers by source country
 artis_fmfo %>%
   filter(importer_iso3c %in% top_10_fm_importers) %>%
-  plot_ts(artis_var = "source_country_iso3c", facet_variable = "importer_iso3c", facet_values = 10, 
-          prop_flow_cutoff = 0.1, plot.type = "stacked")
+  # same as source_country_iso3c
+  plot_ts(artis_var = "catch_artis_country_name", 
+          facet_variable = "importer_iso3c", 
+          facet_values = 10, 
+          prop_flow_cutoff = 0.1, 
+          plot.type = "stacked") +
+  theme(legend.title = element_text("Source Country"))
 
+# Additional imports of interest by source country
 artis_fmfo %>%
   filter(importer_iso3c %in% additional_fm_importers) %>%
-  plot_ts(artis_var = "source_country_iso3c", facet_variable = "importer_iso3c", facet_values = 12, 
-          prop_flow_cutoff = 0.1, plot.type = "stacked")
+  plot_ts(artis_var = "catch_artis_country_name", 
+          facet_variable = "importer_iso3c", 
+          facet_values = 12, 
+          prop_flow_cutoff = 0.1, 
+          plot.type = "stacked") +
+  theme(legend.title = element_text("Source Country"))
 
