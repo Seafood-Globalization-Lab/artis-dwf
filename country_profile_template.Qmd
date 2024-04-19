@@ -1,0 +1,31 @@
+---
+title: "Oceana Distant Water Fishing Report: {{country}}"
+author: 
+  name: "Seafood Globalization Lab"
+  email: "gephart@uw.edu"
+  affiliation: "School of Aquatic and Fishery Sciences, University of Washington"
+  orcid: "0000-0000-0000-0000"
+date: "2024-04-19"
+updated: "`r Sys.Date()`"
+format:
+    pdf: default
+    html: 
+      self-contained: true
+      grid: 
+        margin-width: 350px
+execute: 
+  echo: fenced
+reference-location: margin
+citation-location: margin
+---
+
+# {{country}} Report
+
+## Introduction
+
+This report provides an analysis of {{country}}.
+
+## Data Analysis
+
+```{r echo=FALSE}
+# R code to analyze data for {{country}}
