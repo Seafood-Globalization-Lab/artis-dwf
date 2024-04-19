@@ -28,4 +28,44 @@ This report provides an analysis of {{country}}.
 ## Data Analysis
 
 ```{r echo=FALSE}
-# R code to analyze data for {{country}}
+# Get country iso3 character value to filter data
+an_iso3c <- countrycode(a_country,
+                       origin = "country.name",
+                       destination = "iso3c")
+
+# filter artis eez for country and year of interest
+an_artis_eez <- artis_eez %>% 
+  filter(source_country_iso3c == an_iso3c,
+         year == year_int)
+
+```
+
+### Top 25 DWF EEZs
+```{r}
+#| tbl-cap-location: margin
+
+# print top 25 DWF species
+an_artis_eez %>% 
+  filter(dwf == "foreign") %>%
+  group_by(sciname) %>%
+  summarise(live_weight_t = sum(live_weight_t)) %>%
+  arrange(desc(live_weight_t)) %>%
+  slice_head(n = 25) # limits df to first 25 rows
+
+knitr::kable(
+  an_artis_eez, caption = 'Top 25 DWF Species'
+)
+```
+
+```{r}
+# plot artis_sau$source_country_iso3c (without catch eez information)
+artis_eez_chn %>%
+ # select(-source_country_iso3c) %>%
+ # rename("source_country_iso3c" = "catch_artis_iso3") %>%
+  filter(sciname == "illex argentinus") %>%
+  plot_sankey()
+```
+
+
+
+
