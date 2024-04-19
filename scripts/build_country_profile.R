@@ -9,9 +9,13 @@ library(quarto) # Rmd successor
 countries <- c("Belize", "Brazil", "Canada", "Chile", "Mexico", "Philippines", "Peru", "UK", "USA", "Spain", "Malaysia", "Ghana", "Senegal")
 
 # Standardize country names 
-countries_std <-countrycode(countries,
+countries_std <- countrycode(countries,
                               origin = "country.name",
                               destination = "country.name")
+
+
+# set year for analysis
+year_int <- 2019
 
 # Loop through each country to generate individual reports
 for (a_country in countries_std) {
