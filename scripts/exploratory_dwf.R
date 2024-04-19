@@ -171,7 +171,7 @@ prod_sau_props <- prod_sau %>%
 
 # Disaggregate ARTIS by EEZ of catch - join datasets
 artis_eez <- artis_sau %>% 
-  # prod_sau is inherently only marine capture - match artis_sau data
+  # prod_sau (therefor prod_sau_props) is inherently only marine capture - match artis_sau data
   filter(habitat == "marine", 
          method == "capture") %>%
   # pull prod_sau_props data for year year, source country, and species
@@ -192,7 +192,7 @@ year_int <- 2019
 
 # Filter for China
 artis_eez_chn <- artis_eez %>% 
-  # prod_sau is inherently only marine capture - match artis_sau data
+  # prod_sau (subsequently join product artis_eez) is inherently only marine capture - Needs to match filtered artis_sau data
   filter(source_country_iso3c == "CHN",
          year == year_int)
 
@@ -214,7 +214,8 @@ artis_eez_chn %>%
   group_by(sciname) %>%
   summarise(live_weight_t = sum(live_weight_t)) %>%
   arrange(desc(live_weight_t)) %>%
-  print(n = 25)
+  slice_head(n = 25)
+  #print(n = 25)
 
 # plot artis_sau$source_country_iso3c (without catch eez information)
 artis_eez_chn %>%
