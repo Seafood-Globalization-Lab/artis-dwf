@@ -13,7 +13,6 @@ countries_std <- countrycode(countries,
                               origin = "country.name",
                               destination = "country.name")
 
-
 # set year for analysis
 year_int <- 2019
 
@@ -21,10 +20,10 @@ year_int <- 2019
 for (a_country in countries_std) {
   
   # Knit the Rmd/Quarto file
-  quarto::quarto_render(
-    input = file.path(".", "country_profile_template.Qmd"),  
-    output_file = paste0("report_", a_country, ".html"),
-    params = list(a_country = a_country) # not sure if this is correst - AM
+  quarto_render(
+    input = file.path("country_profile_template.Qmd"),  
+    output_file = paste0("report_", a_country, ".html")#,
+   # params = list(a_country = a_country) # not sure if this is correst - AM
   )
   
   cat(paste("Report for", a_country, "generated.\n"))
