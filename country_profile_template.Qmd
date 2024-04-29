@@ -13,11 +13,20 @@ format:
       self-contained: true
       grid: 
         margin-width: 350px
-execute: 
-  echo: fenced
 reference-location: margin
 citation-location: margin
 ---
+
+```{r setup}
+
+library(quarto)
+library(countrycode)
+library(magrittr)
+a_country <- "Belize"
+
+```
+
+
 
 # {{country}} Report
 
@@ -27,7 +36,7 @@ This report provides an analysis of {{country}}.
 
 ## Data Analysis
 
-```{r echo=FALSE}
+```{r}
 # Get country iso3 character value to filter data
 an_iso3c <- countrycode(a_country,
                        origin = "country.name",

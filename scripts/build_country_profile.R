@@ -22,8 +22,7 @@ for (a_country in countries_std) {
   # Knit the Rmd/Quarto file
   quarto_render(
     input = file.path("country_profile_template.Qmd"),  
-    output_file = paste0("report_", a_country, ".html")#,
-   # params = list(a_country = a_country) # not sure if this is correst - AM
+    output_file = file.path("./output", paste0("report_", a_country))
   )
   
   cat(paste("Report for", a_country, "generated.\n"))
