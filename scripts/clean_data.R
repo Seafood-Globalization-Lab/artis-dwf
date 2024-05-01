@@ -4,7 +4,6 @@
 
 
 # Load Packages & Create variables -----------------------------------------
-library(quarto) # Rmd successor
 library(tidyverse)
 library(countrycode)
 library(exploreARTIS)
@@ -22,13 +21,16 @@ library(exploreARTIS)
 
 # Load Data & Scripts -------------------------------------------------
 #existing SAU data in ARTIS
-artis_sau <- read.csv("data/SAU_ARTIS_2010-2020.csv")
+artis_sau <- read_csv(
+  file.path("data", "SAU_ARTIS_2010-2020.csv", fsep = "/"))
 
 # load new SAU data - AM from ARTIS repo ./QA/outputs/
 # Only contains species & countries standardized SAU marine capture (not EEZ) 
-prod_sau <- read_csv("./data/standardized_sau_prod.csv")
+prod_sau <- read_csv(
+  file.path(".", "data", "standardized_sau_prod.csv", fsep = "/"))
 
-source(file.path("./scripts/standardize_sau.R"))
+# call functions script
+source(file.path(".", "scripts", "functions.R", fsep = "/"))
 
 # Clean Data -------------------------------------------------
 prod_sau <- prod_sau %>%
@@ -91,76 +93,7 @@ prod_sau <- prod_sau %>%
     TRUE ~ "foreign"
   ))
 
-# Summary Stats & Figures ----------------------------------------------
-
-# Landings x Year x (domestic vs foreign)
-prod_sau %>%
-  group_by(year, dwf) %>% 
-  summarise(live_weight_t = sum(live_weight_t)) %>%
-  ggplot(aes(x = year, y = live_weight_t/1000000, fill = dwf)) +
-  geom_area() +
-  labs(x = "", 
-       y = "Landings (mil t, live weight)",
-       title = "Overall Domestic vs Foreign Landings") +
-  theme_bw()
-
-# Average Landings x Country
-prod_sau %>%
-  filter(dwf == "foreign") %>%
-  group_by(catch_artis_country_name) %>%
-  summarise(total_dwf = sum(live_weight_t)) %>%
-  filter(total_dwf > 1000000) %>%
-  ungroup() %>%
-  ggplot(aes(y = fct_reorder(catch_artis_country_name, total_dwf), 
-             x = total_dwf/(1000000*length(unique(prod_sau$year))))) +
-  geom_bar(stat = "identity") +
-  labs(y = "", 
-       x = "Ave. Landings (mil t, live weight)",
-       title = "") +
-  theme_bw()
-
-# Top DWF fishing countries x Foreign landings x year
-prod_sau %>%
-  filter(dwf == "foreign") %>%
-  group_by(catch_artis_country_name) %>%
-  mutate(total_dwf = sum(live_weight_t)) %>%
-  filter(total_dwf > 15000000) %>%
-  group_by(year, catch_artis_country_name) %>% 
-  summarise(live_weight_t = sum(live_weight_t)) %>%
-  ggplot(aes(x = year, y = live_weight_t/1000000, fill = catch_artis_country_name)) +
-  geom_area() +
-  labs(x = "", 
-       y = "Landings (mil t, live weight)", 
-       fill = "Fishing entity",
-       title = "Top countries landings from distant water fishing") +
-  theme_bw()
-
-# Top species caught by DFW
-prod_sau %>%
-  filter(dwf == "foreign") %>%
-  group_by(SciName) %>%
-  mutate(total_dwf = sum(live_weight_t)) %>%
-  filter(total_dwf > 5000000) %>%
-  group_by(year, SciName) %>% 
-  summarise(live_weight_t = sum(live_weight_t)) %>%
-  ggplot(aes(x = year, y = live_weight_t/1000000, fill = SciName)) +
-  geom_area() +
-  labs(x = "", 
-       y = "Landings (mil t, live weight)", 
-       fill = "",
-       title = "Top species landings by distant water fishing") +
-  theme_bw()
-
-# number of observations
-prod_sau %>%
-  nrow()
-
-# number of low production observations
-prod_sau %>%
-  filter(live_weight_t < 0.1) %>%
-  nrow()
-
-# Join Prod SAU & ARTIS SAU data ---------------------------------------------
+# Join Prod SAU & ARTIS SAU data --------------------------------------------
 
 # Proportion of landings by country flag captured in recorded source eezs
 prod_sau_props <- prod_sau %>%
