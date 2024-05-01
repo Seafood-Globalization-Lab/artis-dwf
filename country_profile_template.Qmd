@@ -1,5 +1,5 @@
 ---
-title: "Oceana Distant Water Fishing Report: {{country}}"
+title: "Oceana Distant Water Fishing Report: country"
 author: 
   name: "Seafood Globalization Lab"
   email: "gephart@uw.edu"
@@ -16,12 +16,13 @@ format:
 reference-location: margin
 citation-location: margin
 execute: 
-  cache: true
+  cache: false
 ---
 
 ```{r setup}
 
 library(quarto)
+library(knitr) # Need package version 1.44 or up
 library(countrycode)
 library(magrittr)
 
@@ -32,16 +33,22 @@ year_int <- 2019
 ```
 
 
-# {{a_country}} Report
+# Report
 
 ## Introduction
 
-This report provides an analysis of {{a_country}}.
+This report provides an analysis of .
 
 ## Data Analysis
 
 ```{r clean_data}
-source(file.path("scripts", "clean_data.R"))
+#| include: true
+#| warning: false
+#| cache-lazy: false
+
+# Quarto is not handling this long run time. Tried various caching options. Works fine in Rmd. Abandoning Quarto for now. - AM 2024_05_01
+
+source(file.path(".","scripts", "clean_data.R", fsep = "/"))
 ```
 
 
@@ -76,6 +83,8 @@ knitr::kable(
 ```
 
 ```{r}
+#| eval: false
+
 # plot artis_sau$source_country_iso3c (without catch eez information)
 artis_eez_chn %>%
  # select(-source_country_iso3c) %>%
