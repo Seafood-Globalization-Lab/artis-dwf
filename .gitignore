@@ -33,6 +33,13 @@ vignettes/*.pdf
 *_cache/
 /cache/
 
+# RMD rendering files
+*.log
+*.tex
+
+# HTML output file
+*html
+
 # Temporary files created by R markdown
 *.utf8.md
 *.knit.md
