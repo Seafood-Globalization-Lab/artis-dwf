@@ -15,6 +15,8 @@ format:
         margin-width: 350px
 reference-location: margin
 citation-location: margin
+execute: 
+  cache: true
 ---
 
 ```{r setup}
@@ -22,19 +24,26 @@ citation-location: margin
 library(quarto)
 library(countrycode)
 library(magrittr)
+
+# temporary variables - paramaterize report later - AM 2024-04-29
 a_country <- "Belize"
+year_int <- 2019
 
 ```
 
 
-
-# {{country}} Report
+# {{a_country}} Report
 
 ## Introduction
 
-This report provides an analysis of {{country}}.
+This report provides an analysis of {{a_country}}.
 
 ## Data Analysis
+
+```{r clean_data}
+source(file.path("scripts", "clean_data.R"))
+```
+
 
 ```{r}
 # Get country iso3 character value to filter data
