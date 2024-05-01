@@ -1,0 +1,90 @@
+---
+title: "Oceana Distant Water Fishing Report: country"
+author: 
+  name: "Seafood Globalization Lab"
+  email: "gephart@uw.edu"
+  affiliation: "School of Aquatic and Fishery Sciences, University of Washington"
+  orcid: "0000-0000-0000-0000"
+date: "2024-04-19"
+updated: "`r Sys.Date()`"
+format:
+    pdf: default
+    html: 
+      self-contained: true
+---
+
+```{r setup}
+
+knitr::opts_chunk$set(cache = TRUE)
+
+library(quarto)
+library(knitr) # Need package version 1.44 or up
+library(countrycode)
+library(magrittr)
+
+# temporary variables - paramaterize report later - AM 2024-04-29
+a_country <- "Belize"
+year_int <- 2019
+
+```
+
+
+# Report
+
+## Introduction
+
+This report provides an analysis of .
+
+## Data Analysis
+
+```{r clean_data}
+#| include: false
+
+source(file.path(".","scripts", "clean_data.R", fsep = "/"))
+```
+
+
+```{r}
+# Get country iso3 character value to filter data
+an_iso3c <- countrycode(a_country,
+                       origin = "country.name",
+                       destination = "iso3c")
+
+# filter artis eez for country and year of interest
+an_artis_eez <- artis_eez %>% 
+  filter(source_country_iso3c == an_iso3c,
+         year == year_int)
+
+```
+
+### Top 25 DWF EEZs
+```{r}
+#| tbl-cap-location: margin
+
+# print top 25 DWF species
+top_25 <- an_artis_eez %>% 
+  filter(dwf == "foreign") %>%
+  group_by(sciname) %>%
+  summarise(live_weight_t = sum(live_weight_t)) %>%
+  arrange(desc(live_weight_t)) %>%
+  slice_head(n = 25) # limits df to first 25 rows
+
+knitr::kable(
+  top_25, caption = 'Top 25 DWF Species'
+)
+```
+
+```{r}
+#| eval: false
+
+# plot artis_sau$source_country_iso3c (without catch eez information)
+artis_eez_chn %>%
+ # select(-source_country_iso3c) %>%
+ # rename("source_country_iso3c" = "catch_artis_iso3") %>%
+  filter(sciname == "illex argentinus") %>%
+  plot_sankey()
+```
+
+
+
+
