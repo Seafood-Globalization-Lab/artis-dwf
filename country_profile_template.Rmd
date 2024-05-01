@@ -1,5 +1,4 @@
 ---
-title: "Oceana Distant Water Fishing Report: country"
 author: 
   name: "Seafood Globalization Lab"
   email: "gephart@uw.edu"
@@ -15,9 +14,13 @@ editor_options:
 ---
 
 ```{r setup}
+#| include: false
 
-knitr::opts_chunk$set(cache = TRUE)
-
+# set code chunk defaults for document
+knitr::opts_chunk$set(cache = TRUE, 
+                      cache.lazy = FALSE, 
+                      include = FALSE)
+# load packages
 library(rmarkdown)
 #library(quarto)
 library(knitr) # Need package version 1.44 or up for quarto
@@ -30,21 +33,20 @@ year_int <- 2019
 
 ```
 
+---
+title: "Oceana Distant Water Fishing Report: `r a_country`"
+---
 
-# Report
+# Introduction
 
-## Introduction
+This report provides an analysis of `r a_country` distant water fishing.
 
-This report provides an analysis of .
-
-## Data Analysis
+# Data Analysis
 
 ```{r clean_data}
-#| include: false
 
 source(file.path(".","scripts", "clean_data.R", fsep = "/"))
 ```
-
 
 ```{r}
 # Get country iso3 character value to filter data
@@ -59,9 +61,28 @@ an_artis_eez <- artis_eez %>%
 
 ```
 
-### Top 25 DWF EEZs
+## Landings mass check
 ```{r}
-#| tbl-cap-location: margin
+# landings mass check - filter
+artis_sau_check <- artis_sau %>% 
+  filter(habitat == "marine", 
+         method == "capture", 
+         year == year_int, 
+         source_country_iso3c == "CHN")
+
+# e^-6 or e^-9 considered 0 - haven't gained or lost any mass
+mass_diff <- sum(an_artis_eez$live_weight_t) - sum(artis_sau_check$live_weight_t)
+
+nrow_artis_eez <- nrow(an_artis_eez) 
+```
+
+The difference between ARTIS live weight (tons) and SAU live weight (tons) is `r mass_diff`.
+
+The number of rows in ARTIS EEZ is `r nrow_artis_eez`. 
+
+
+```{r}
+#| echo: TRUE
 
 # print top 25 DWF species
 top_25 <- an_artis_eez %>% 
@@ -76,14 +97,29 @@ knitr::kable(
 )
 ```
 
+### `r top_25[[1,1]]`
+
 ```{r}
-#| eval: false
+#| include: true
+#| echo: false
 
 # plot artis_sau$source_country_iso3c (without catch eez information)
-artis_eez_chn %>%
+an_artis_eez %>%
  # select(-source_country_iso3c) %>%
  # rename("source_country_iso3c" = "catch_artis_iso3") %>%
-  filter(sciname == "illex argentinus") %>%
+  filter(sciname == top_25[[1,1]]) %>%
+  plot_sankey()
+```
+
+```{r}
+#| include: true
+#| echlo: false
+
+# plot with catch eez information
+an_artis_eez %>%
+  select(-source_country_iso3c) %>%
+  rename("source_country_iso3c" = "catch_artis_iso3") %>%
+  filter(sciname == top_25[[1,1]]) %>%
   plot_sankey()
 ```
 
