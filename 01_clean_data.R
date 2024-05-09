@@ -122,5 +122,5 @@ artis_eez <- artis_sau %>%
   mutate(live_weight_t = live_weight_t*prop_by_catch_eez)
 # many-to-many warning is what we expect here - one row of artis_sau correlates with multiple prod_sau eez
 
-
+write_csv(artis_eez, file.path("output", "clean_data_artis_eez.csv", fsep = "/"))
 
