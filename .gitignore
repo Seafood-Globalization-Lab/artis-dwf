@@ -59,5 +59,6 @@ rsconnect/
 # Mac specific files
 *.DS_Store
 
-# data folder and contents
+# folders and contents
 data/
+outputs/
