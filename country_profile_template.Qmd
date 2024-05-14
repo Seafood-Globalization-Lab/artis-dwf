@@ -14,8 +14,10 @@ format:
         margin-width: 350px
 reference-location: margin
 citation-location: margin
-execute: 
-  cache: true
+params: 
+  countries_i: "China"
+  artis_eez_i: "artis_eez_df"
+  artis_sau_i: "artis_sau_df"
 ---
 
 ```{r setup}
@@ -26,65 +28,55 @@ library(quarto)
 library(knitr) # Need package version 1.44 or up
 library(countrycode)
 library(magrittr)
+library(readr)
+library(dplyr)
 
 # temporary variables - paramaterize report later - AM 2024-04-29
-a_country <- "Belize"
-year_int <- 2019
+# countries_i <- "Belize"
+# year_int <- 2019
 
 # Read in data
-artis_eez <- read_csv(file.path("output", "clean_data_artis_eez.csv", fsep = "/"))
-artis_sau <- read_csv(file.path("data", "SAU_ARTIS_2010-2020.csv", fsep = "/"))
+# artis_eez <- read_csv(file.path("output", "clean_data_artis_eez.csv", 
+#                                 fsep = "/"))
+#artis_sau <- read_csv(file.path("data", "SAU_ARTIS_2010-2020.csv", fsep = "/"))
 
 ```
 
----
-title: "Oceana Distant Water Fishing Report: `r a_country`"
----
+title: "Oceana Distant Water Fishing Report: `r params$countries_i`"
 
 ## Introduction
 
-This report provides an analysis of `r a_country`
+This report provides an analysis of `r params$countries_i`
 
 ## Data Analysis
 
+### Landings mass check
 ```{r}
-# Get country iso3 character value to filter data
-an_iso3c <- countrycode(a_country,
-                       origin = "country.name",
-                       destination = "iso3c")
-
-# filter artis eez for country and year of interest
-an_artis_eez <- artis_eez %>% 
-  filter(source_country_iso3c == an_iso3c,
-         year == year_int)
-
-```
-
-## Landings mass check
-```{r}
+#| eval: false
+#| 
 # landings mass check - filter
-artis_sau_check <- artis_sau %>% 
-  filter(habitat == "marine", 
-         method == "capture", 
-         year == year_int, 
-         source_country_iso3c == "CHN")
+# artis_sau_check <- artis_sau %>% 
+#   filter(habitat == "marine", 
+#          method == "capture", 
+#         # year == year_int, 
+#          source_country_iso3c == params$countries_i)
 
 # e^-6 or e^-9 considered 0 - haven't gained or lost any mass
-mass_diff <- sum(an_artis_eez$live_weight_t) - sum(artis_sau_check$live_weight_t)
+mass_diff <- sum(params$artis_eez_i[,"live_weight_t"], na.rm = T) - sum(params$artis_sau_i[,"live_weight_t"])
 
-nrow_artis_eez <- nrow(an_artis_eez) 
+nrow_artis_eez <- nrow(params$artis_eez_i) 
 ```
 
-The difference between ARTIS live weight (tons) and SAU live weight (tons) is `r mass_diff`.
+The difference between ARTIS live weight (tons) and SAU live weight (tons) is `r #mass_diff`.
 
-The number of rows in ARTIS EEZ is `r nrow_artis_eez`. 
+The number of rows in ARTIS EEZ is `r #nrow_artis_eez`. 
 
 
 ```{r}
-#| echo: TRUE
+#| echo: true
 
 # print top 25 DWF species
-top_25 <- an_artis_eez %>% 
+top_25 <- params$artis_eez_i %>% 
   filter(dwf == "foreign") %>%
   group_by(sciname) %>%
   summarise(live_weight_t = sum(live_weight_t)) %>%
@@ -92,7 +84,7 @@ top_25 <- an_artis_eez %>%
   slice_head(n = 25) # limits df to first 25 rows
 
 knitr::kable(
-  top_25, caption = 'Top 25 DWF Species'
+  top_25, caption = paste0('Top 25 DWF Species in ', params$countries_i) 
 )
 ```
 
@@ -103,7 +95,7 @@ knitr::kable(
 #| echo: false
 
 # plot artis_sau$source_country_iso3c (without catch eez information)
-an_artis_eez %>%
+params$artis_eez_i %>%
  # select(-source_country_iso3c) %>%
  # rename("source_country_iso3c" = "catch_artis_iso3") %>%
   filter(sciname == top_25[[1,1]]) %>%
@@ -115,7 +107,7 @@ an_artis_eez %>%
 #| echlo: false
 
 # plot with catch eez information
-an_artis_eez %>%
+params$artis_eez_i %>%
   select(-source_country_iso3c) %>%
   rename("source_country_iso3c" = "catch_artis_iso3") %>%
   filter(sciname == top_25[[1,1]]) %>%

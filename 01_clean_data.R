@@ -7,30 +7,28 @@
 library(tidyverse)
 library(countrycode)
 library(exploreARTIS)
+library(quarto)
 
-# # List of Oceana countries of interest: 
-# countries <- c("Belize", "Brazil", "Canada", "Chile", "Mexico", "Philippines", "Peru", "UK", "USA", "Spain", "Malaysia", "Ghana", "Senegal")
-# 
-# # Standardize country names 
-# countries_std <- countrycode(countries,
-#                               origin = "country.name",
-#                               destination = "country.name")
-# 
-# # set year for analysis
-# year_int <- 2019
+
+# Create directories ------------------------------------------------------
+
+outdir <- file.path(".", "output", fsep = "/")
 
 # Load Data & Scripts -------------------------------------------------
 #existing SAU data in ARTIS
 artis_sau <- read_csv(
-  file.path("data", "SAU_ARTIS_2010-2020.csv", fsep = "/"))
+  file.path("data", "SAU_ARTIS_2010-2020.csv", 
+            fsep = "/"))
 
 # load new SAU data - AM from ARTIS repo ./QA/outputs/
 # Only contains species & countries standardized SAU marine capture (not EEZ) 
 prod_sau <- read_csv(
-  file.path(".", "data", "standardized_sau_prod.csv", fsep = "/"))
+  file.path(".", "data", "standardized_sau_prod.csv", 
+            fsep = "/"))
 
 # call functions script
-source(file.path(".", "scripts", "functions.R", fsep = "/"))
+source(file.path(".", "scripts", "functions.R", 
+                 fsep = "/"))
 
 # Clean Data -------------------------------------------------
 prod_sau <- prod_sau %>%
@@ -122,5 +120,80 @@ artis_eez <- artis_sau %>%
   mutate(live_weight_t = live_weight_t*prop_by_catch_eez)
 # many-to-many warning is what we expect here - one row of artis_sau correlates with multiple prod_sau eez
 
-write_csv(artis_eez, file.path("output", "clean_data_artis_eez.csv", fsep = "/"))
+
+# Countries of interest ---------------------------------------------------
+
+# Vector of Oceana countries:
+# countries <- c("Belize", "Brazil", "Canada", "Chile", "Mexico", "Philippines", "Peru", "UK", "USA", "Spain", "Malaysia", "Ghana", "Senegal")
+countries <- c("Belize")
+
+# Standardize country names
+countries_std <- countrycode(countries,
+                              origin = "country.name",
+                              destination = "country.name")
+
+countries_i <- countries_std
+
+# # set year for analysis
+# year_int <- 2019
+
+# Create Oceana profiles ---------------------------------------------
+
+for (i in 1:length(countries_std)) {
+  countries_i <- countries_std[i]
+
+  # filter by single country of interest
+  artis_eez_i <- artis_eez %>%
+    filter(source_country_iso3c == countries_i)
+  
+  artis_sau_i <- artis_sau %>% 
+    filter(habitat == "marine", 
+           method == "capture", 
+           # year == year_int, 
+           source_country_iso3c == countries_i)
+
+  quarto::quarto_render(
+    input = "country_profile_template.Qmd",
+    execute_params = list(countries_i = countries_i,
+                          artis_eez_i = artis_eez_i,
+                          artis_sau_i = artis_sau_i),
+    #output_dir = outdir,
+    output_file = paste("dwf", countries_i, "profile.pdf", sep = "_")
+  )
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
