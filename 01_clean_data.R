@@ -139,9 +139,32 @@ countries_i <- countries_std
 
 # Create Oceana profiles ---------------------------------------------
 
+# for (i in 1:length(countries_std)) {
+#   countries_i <- countries_std[i]
+# 
+#   # filter by single country of interest
+#   artis_eez_i <- artis_eez %>%
+#     filter(source_country_iso3c == countries_i)
+#   
+#   artis_sau_i <- artis_sau %>% 
+#     filter(habitat == "marine", 
+#            method == "capture", 
+#            # year == year_int, 
+#            source_country_iso3c == countries_i)
+# 
+#   quarto::quarto_render(
+#     input = "country_profile_template.Qmd",
+#     execute_params = list(countries_i = countries_i,
+#                           artis_eez_i = artis_eez_i,
+#                           artis_sau_i = artis_sau_i),
+#     #output_dir = outdir,
+#     output_file = paste("dwf", countries_i, "profile.pdf", sep = "_")
+#   )
+# }
+
 for (i in 1:length(countries_std)) {
   countries_i <- countries_std[i]
-
+  
   # filter by single country of interest
   artis_eez_i <- artis_eez %>%
     filter(source_country_iso3c == countries_i)
@@ -151,10 +174,10 @@ for (i in 1:length(countries_std)) {
            method == "capture", 
            # year == year_int, 
            source_country_iso3c == countries_i)
-
-  quarto::quarto_render(
-    input = "country_profile_template.Qmd",
-    execute_params = list(countries_i = countries_i,
+  
+  rmarkdown::render(
+    input = "country_profile_template.Rmd",
+    params = list(countries_i = countries_i,
                           artis_eez_i = artis_eez_i,
                           artis_sau_i = artis_sau_i),
     #output_dir = outdir,

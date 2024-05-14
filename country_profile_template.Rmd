@@ -1,25 +1,21 @@
 ---
 author: 
   name: "Seafood Globalization Lab"
-  email: "gephart@uw.edu"
   affiliation: "School of Aquatic and Fishery Sciences, University of Washington"
   orcid: "0000-0000-0000-0000"
-date: "2024-04-19"
-updated: "`r Sys.Date()`"
-output:
-    html_document: 
-      self-contained: true
+date: "`r Sys.Date()`"
+output: pdf_document
 editor_options: 
   chunk_output_type: console
+params: 
+  countries_i: NULL
+  artis_eez_i: NULL
+  artis_sau_i: NULL
+
 ---
 
-```{r setup}
-#| include: false
+```{r setup, include=FALSE}
 
-# set code chunk defaults for document
-knitr::opts_chunk$set(cache = TRUE, 
-                      cache.lazy = FALSE, 
-                      include = FALSE)
 # load packages
 library(rmarkdown)
 #library(quarto)
@@ -27,42 +23,21 @@ library(knitr) # Need package version 1.44 or up for quarto
 library(countrycode)
 library(magrittr)
 
-# temporary variables - paramaterize report later - AM 2024-04-29
-a_country <- "Belize"
-year_int <- 2019
-
 ```
 
 ---
-title: "Oceana Distant Water Fishing Report: `r a_country`"
+title: "Oceana Distant Water Fishing Report: `r params$countries_i`"
 ---
 
 # Introduction
 
-This report provides an analysis of `r a_country` distant water fishing.
+This report provides an analysis of `r params$countries_i` distant water fishing.
 
 # Data Analysis
 
-```{r clean_data}
-
-source(file.path(".","scripts", "clean_data.R", fsep = "/"))
-```
-
-```{r}
-# Get country iso3 character value to filter data
-an_iso3c <- countrycode(a_country,
-                       origin = "country.name",
-                       destination = "iso3c")
-
-# filter artis eez for country and year of interest
-an_artis_eez <- artis_eez %>% 
-  filter(source_country_iso3c == an_iso3c,
-         year == year_int)
-
-```
-
 ## Landings mass check
-```{r}
+```{r eval=F}
+
 # landings mass check - filter
 artis_sau_check <- artis_sau %>% 
   filter(habitat == "marine", 
@@ -76,16 +51,15 @@ mass_diff <- sum(an_artis_eez$live_weight_t) - sum(artis_sau_check$live_weight_t
 nrow_artis_eez <- nrow(an_artis_eez) 
 ```
 
-The difference between ARTIS live weight (tons) and SAU live weight (tons) is `r mass_diff`.
+The difference between ARTIS live weight (tons) and SAU live weight (tons) is x.
 
-The number of rows in ARTIS EEZ is `r nrow_artis_eez`. 
+The number of rows in ARTIS EEZ is x. 
 
 
 ```{r}
-#| echo: TRUE
 
 # print top 25 DWF species
-top_25 <- an_artis_eez %>% 
+top_25 <- params$artis_eez_i %>% 
   filter(dwf == "foreign") %>%
   group_by(sciname) %>%
   summarise(live_weight_t = sum(live_weight_t)) %>%
@@ -97,11 +71,9 @@ knitr::kable(
 )
 ```
 
-### `r top_25[[1,1]]`
+### Graphs
 
-```{r}
-#| include: true
-#| echo: false
+```{r, eval=FALSE}
 
 # plot artis_sau$source_country_iso3c (without catch eez information)
 an_artis_eez %>%
@@ -111,9 +83,7 @@ an_artis_eez %>%
   plot_sankey()
 ```
 
-```{r}
-#| include: true
-#| echlo: false
+```{r, eval=FALSE}
 
 # plot with catch eez information
 an_artis_eez %>%
