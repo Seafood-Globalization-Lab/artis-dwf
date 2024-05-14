@@ -15,9 +15,9 @@ format:
 reference-location: margin
 citation-location: margin
 params: 
-  countries_i: "China"
-  artis_eez_i: "artis_eez_df"
-  artis_sau_i: "artis_sau_df"
+  countries_i: NULL
+  artis_eez_i: NULL
+  artis_sau_i: NULL
 ---
 
 ```{r setup}
@@ -76,7 +76,7 @@ The number of rows in ARTIS EEZ is `r #nrow_artis_eez`.
 #| echo: true
 
 # print top 25 DWF species
-top_25 <- params$artis_eez_i %>% 
+top_25 <- params$artis_eez_i[[1]] %>% 
   filter(dwf == "foreign") %>%
   group_by(sciname) %>%
   summarise(live_weight_t = sum(live_weight_t)) %>%
@@ -93,6 +93,7 @@ knitr::kable(
 ```{r}
 #| include: true
 #| echo: false
+#| eval: false
 
 # plot artis_sau$source_country_iso3c (without catch eez information)
 params$artis_eez_i %>%
@@ -104,7 +105,8 @@ params$artis_eez_i %>%
 
 ```{r}
 #| include: true
-#| echlo: false
+#| echo: false
+#| eval: false
 
 # plot with catch eez information
 params$artis_eez_i %>%
