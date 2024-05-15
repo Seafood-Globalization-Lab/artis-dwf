@@ -4,7 +4,7 @@ author:
   affiliation: "School of Aquatic and Fishery Sciences, University of Washington"
   orcid: "0000-0000-0000-0000"
 date: "`r Sys.Date()`"
-output: pdf_document
+output: html_document
 editor_options: 
   chunk_output_type: console
 params: 
@@ -15,6 +15,10 @@ params:
 ---
 
 ```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, 
+                      message = FALSE,
+                      warning = FALSE)
 
 # load packages
 library(rmarkdown)
@@ -31,7 +35,7 @@ title: "Oceana Distant Water Fishing Report: `r params$countries_i`"
 
 # Introduction
 
-This report provides an analysis of `r params$countries_i` distant water fishing.
+This report provides an analysis of `r params$countries_i` distant water fishing in `r year_int`
 
 # Data Analysis
 
@@ -56,7 +60,7 @@ The difference between ARTIS live weight (tons) and SAU live weight (tons) is x.
 The number of rows in ARTIS EEZ is x. 
 
 
-```{r}
+```{r, echo=FALSE}
 
 # print top 25 DWF species
 top_25 <- params$artis_eez_i %>% 
@@ -73,26 +77,55 @@ knitr::kable(
 
 ### Graphs
 
-```{r, eval=FALSE}
+#### `r top_25[[1,1]]`
+
+loop through this graph generation?
+
+```{r, echo=FALSE, fig.cap="Source Country Without Catch EEZ Information"}
 
 # plot artis_sau$source_country_iso3c (without catch eez information)
-an_artis_eez %>%
+params$artis_eez_i %>%
  # select(-source_country_iso3c) %>%
  # rename("source_country_iso3c" = "catch_artis_iso3") %>%
   filter(sciname == top_25[[1,1]]) %>%
   plot_sankey()
 ```
 
-```{r, eval=FALSE}
+```{r, echo=FALSE, fig.cap="EEZ of Catch for Source Country"}
 
 # plot with catch eez information
-an_artis_eez %>%
+params$artis_eez_i %>%
   select(-source_country_iso3c) %>%
   rename("source_country_iso3c" = "catch_artis_iso3") %>%
   filter(sciname == top_25[[1,1]]) %>%
   plot_sankey()
 ```
 
+#### `r top_25[[2,1]]`
 
+```{r, echo=FALSE, fig.cap="Source Country Without Catch EEZ Information"}
 
+# plot artis_sau$source_country_iso3c (without catch eez information)
+params$artis_eez_i %>%
+ # select(-source_country_iso3c) %>%
+ # rename("source_country_iso3c" = "catch_artis_iso3") %>%
+  filter(sciname == top_25[[2,1]]) %>%
+  plot_sankey()
+```
 
+```{r, echo=FALSE, fig.cap="EEZ of Catch for Source Country"}
+
+# plot with catch eez information
+params$artis_eez_i %>%
+  select(-source_country_iso3c) %>%
+  rename("source_country_iso3c" = "catch_artis_iso3") %>%
+  filter(sciname == top_25[[2,1]]) %>%
+  plot_sankey()
+```
+
+**To DO List**
+
+- Focal country’s DWF activities: percent of catch in foreign waters, stacked line of waters they caught in, top species caught via DWF
+- Focal country’s exports from DWF: Top 4 or 6 species caught via DWF and create stacked line graph of who consumes that. For a recent year (or few years) create sankey for each species (focal country will be far second to the left - farthest left is EEZ) column of sankey). Use consumption table for this. Sankey columns will be EEZ, source country, exporter, consumer.
+- Focal country’s imports of DWF-sourced products -  Top 4 or 6 species caught via DWF and create stacked line graph of EEZ for those. For a recent year (or few years) create sankey for each species (focal country will be far right column of sankey). Use consumption table for this. Sankey columns will be EEZ, source country, exporter, consumer.
+- Note: Can use exploreARTIS packages to assist with these figures. For NGO reports, it is good to replace scientific name with the common name using the sciname_metadata table.

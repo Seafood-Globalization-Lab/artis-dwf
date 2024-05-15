@@ -125,19 +125,40 @@ artis_eez <- artis_sau %>%
 
 # Vector of Oceana countries:
 # countries <- c("Belize", "Brazil", "Canada", "Chile", "Mexico", "Philippines", "Peru", "UK", "USA", "Spain", "Malaysia", "Ghana", "Senegal")
-countries <- c("Belize")
+countries <- c("China")
+year_int <- 2021
 
 # Standardize country names
 countries_std <- countrycode(countries,
                               origin = "country.name",
-                              destination = "country.name")
+                              destination = "iso3c")
 
 countries_i <- countries_std
 
-# # set year for analysis
-# year_int <- 2019
-
 # Create Oceana profiles ---------------------------------------------
+
+for (i in 1:length(countries_std)) {
+  countries_i <- countries_std[i]
+  
+  # filter by single country of interest
+  artis_eez_i <- artis_eez %>%
+    filter(source_country_iso3c == countries_i)
+  
+  artis_sau_i <- artis_sau %>% 
+    filter(habitat == "marine", 
+           method == "capture", 
+           year == year_int, 
+           source_country_iso3c == countries_i)
+  
+  rmarkdown::render(
+    input = "country_profile_template.Rmd",
+    params = list(countries_i = countries_i,
+                  artis_eez_i = artis_eez_i,
+                  artis_sau_i = artis_sau_i),
+    #output_dir = outdir,
+    output_file = paste("dwf", countries_i, "profile.html", sep = "_")
+  )
+}
 
 # for (i in 1:length(countries_std)) {
 #   countries_i <- countries_std[i]
@@ -161,30 +182,6 @@ countries_i <- countries_std
 #     output_file = paste("dwf", countries_i, "profile.pdf", sep = "_")
 #   )
 # }
-
-for (i in 1:length(countries_std)) {
-  countries_i <- countries_std[i]
-  
-  # filter by single country of interest
-  artis_eez_i <- artis_eez %>%
-    filter(source_country_iso3c == countries_i)
-  
-  artis_sau_i <- artis_sau %>% 
-    filter(habitat == "marine", 
-           method == "capture", 
-           # year == year_int, 
-           source_country_iso3c == countries_i)
-  
-  rmarkdown::render(
-    input = "country_profile_template.Rmd",
-    params = list(countries_i = countries_i,
-                          artis_eez_i = artis_eez_i,
-                          artis_sau_i = artis_sau_i),
-    #output_dir = outdir,
-    output_file = paste("dwf", countries_i, "profile.pdf", sep = "_")
-  )
-}
-
 
 
 
