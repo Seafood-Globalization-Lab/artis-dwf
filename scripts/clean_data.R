@@ -1,40 +1,6 @@
-# Build Distant Water Fleet Profiles for each country of interest
+# Standardize SAU data with ARTIS
+# Join Prod SAU & ARTIS SAU data 
 
-# loop through list of countries, knit the Rmd/Quarto file for each country, and save the output as individual HTML reports.
-
-
-# Load Packages & Create variables -----------------------------------------
-library(dplyr)
-library(countrycode)
-library(exploreARTIS)
-library(rmarkdown)
-
-
-# Create directories ------------------------------------------------------
-
-outdir <- file.path(".", "output", fsep = "/")
-
-# Load Data -------------------------------------------------
-#existing SAU data in ARTIS
-artis_sau <- read_csv(
-  file.path("data", "SAU_ARTIS_2010-2020.csv", 
-            fsep = "/"))
-
-# load new SAU data - AM from ARTIS repo ./QA/outputs/
-# Only contains species & countries standardized SAU marine capture (not EEZ) 
-prod_sau <- read_csv(
-  file.path(".", "data", "standardized_sau_prod.csv", 
-            fsep = "/"))
-
-
-# Run Scripts -------------------------------------------------------------
-
-# load functions
-source(file.path(".", "scripts", "functions.R", 
-                 fsep = "/"))
-
-# pull consumption data from Heroku server database
-source(file.path(".", "scripts", "load_db_data.R"))
 
 # Clean Data -------------------------------------------------
 prod_sau <- prod_sau %>%
@@ -121,105 +87,7 @@ artis_eez <- artis_sau %>%
   left_join(prod_sau_props, 
             by = c("year", 
                    "source_country_iso3c" = "prod_iso3", 
-                   "sciname" = "SciName")) %>%
+                   "sciname" = "SciName")) %>% 
   # recalculate live_weight_t catch - each trade and product record gets split apart by the number of catch eez from prod_sau_props - essentially assigning a probability a product was caught in a specific eez. 
   mutate(live_weight_t = live_weight_t*prop_by_catch_eez)
 # many-to-many warning is what we expect here - one row of artis_sau correlates with multiple prod_sau eez
-
-
-# Countries of interest ---------------------------------------------------
-
-# Vector of Oceana countries:
-# countries <- c("Belize", "Brazil", "Canada", "Chile", "Mexico", "Philippines", "Peru", "UK", "USA", "Spain", "Malaysia", "Ghana", "Senegal")
-countries <- c("Belize")
-year_int <- c(2016, 2017, 2018, 2019, 2020)
-
-# Standardize country names
-countries_std <- countrycode(countries,
-                              origin = "country.name",
-                              destination = "iso3c")
-
-countries_i <- countries_std
-
-# Create Oceana profiles ---------------------------------------------
-
-for (i in 1:length(countries_std)) {
-  countries_i <- countries_std[i]
-  
-  # filter by single country of interest
-  artis_eez_i <- artis_eez %>%
-    filter(source_country_iso3c == countries_i)
-  
-  artis_sau_i <- artis_sau %>% 
-    filter(habitat == "marine", 
-           method == "capture", 
-           year %in% year_int, 
-           source_country_iso3c == countries_i)
-  
-  rmarkdown::render(
-    input = "country_profile_template.Rmd",
-    params = list(countries_i = countries_i,
-                  artis_eez_i = artis_eez_i,
-                  artis_sau_i = artis_sau_i),
-    #output_dir = outdir,
-    output_file = paste("dwf", countries_i, "profile.html", sep = "_")
-  )
-}
-
-# for (i in 1:length(countries_std)) {
-#   countries_i <- countries_std[i]
-# 
-#   # filter by single country of interest
-#   artis_eez_i <- artis_eez %>%
-#     filter(source_country_iso3c == countries_i)
-#   
-#   artis_sau_i <- artis_sau %>% 
-#     filter(habitat == "marine", 
-#            method == "capture", 
-#            # year == year_int, 
-#            source_country_iso3c == countries_i)
-# 
-#   quarto::quarto_render(
-#     input = "country_profile_template.Qmd",
-#     execute_params = list(countries_i = countries_i,
-#                           artis_eez_i = artis_eez_i,
-#                           artis_sau_i = artis_sau_i),
-#     #output_dir = outdir,
-#     output_file = paste("dwf", countries_i, "profile.pdf", sep = "_")
-#   )
-# }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
