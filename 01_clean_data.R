@@ -4,17 +4,17 @@
 
 
 # Load Packages & Create variables -----------------------------------------
-library(tidyverse)
+library(dplyr)
 library(countrycode)
 library(exploreARTIS)
-library(quarto)
+library(rmarkdown)
 
 
 # Create directories ------------------------------------------------------
 
 outdir <- file.path(".", "output", fsep = "/")
 
-# Load Data & Scripts -------------------------------------------------
+# Load Data -------------------------------------------------
 #existing SAU data in ARTIS
 artis_sau <- read_csv(
   file.path("data", "SAU_ARTIS_2010-2020.csv", 
@@ -26,9 +26,15 @@ prod_sau <- read_csv(
   file.path(".", "data", "standardized_sau_prod.csv", 
             fsep = "/"))
 
-# call functions script
+
+# Run Scripts -------------------------------------------------------------
+
+# load functions
 source(file.path(".", "scripts", "functions.R", 
                  fsep = "/"))
+
+# pull consumption data from Heroku server database
+source(file.path(".", "scripts", "load_db_data.R"))
 
 # Clean Data -------------------------------------------------
 prod_sau <- prod_sau %>%
@@ -125,8 +131,8 @@ artis_eez <- artis_sau %>%
 
 # Vector of Oceana countries:
 # countries <- c("Belize", "Brazil", "Canada", "Chile", "Mexico", "Philippines", "Peru", "UK", "USA", "Spain", "Malaysia", "Ghana", "Senegal")
-countries <- c("China")
-year_int <- 2021
+countries <- c("Belize")
+year_int <- c(2016, 2017, 2018, 2019, 2020)
 
 # Standardize country names
 countries_std <- countrycode(countries,
@@ -147,7 +153,7 @@ for (i in 1:length(countries_std)) {
   artis_sau_i <- artis_sau %>% 
     filter(habitat == "marine", 
            method == "capture", 
-           year == year_int, 
+           year %in% year_int, 
            source_country_iso3c == countries_i)
   
   rmarkdown::render(
