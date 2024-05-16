@@ -4,7 +4,10 @@ author:
   affiliation: "School of Aquatic and Fishery Sciences, University of Washington"
   orcid: "0000-0000-0000-0000"
 date: "`r Sys.Date()`"
-output: html_document
+output: 
+  html_document:
+    theme: simplex
+    toc: yes
 editor_options: 
   chunk_output_type: console
 params: 
@@ -16,33 +19,39 @@ params:
 
 ```{r setup, include=FALSE}
 
+# set global code chunk options
 knitr::opts_chunk$set(echo = FALSE, 
                       message = FALSE,
                       warning = FALSE)
 
 # load packages
 library(rmarkdown)
-#library(quarto)
 library(knitr) # Need package version 1.44 or up for quarto
-library(countrycode)
-library(magrittr)
-library(ggplot2)
+library(countrycode) # convert and standardize country id
+library(magrittr) # pipe function
+library(ggplot2) # visualization
+library(exploreARTIS) # custom ARTIS package 
+
+# iso3c to country name
+country_name <- countrycode(params$countries_i,
+                            origin = "iso3c",
+                            destination = "country.name")
 
 ```
 
 ---
-title: "Oceana Distant Water Fishing Report: `r params$countries_i`"
+title: "Oceana Distant Water Fishing Report: `r country_name`"
 ---
 
 # Introduction
 
-This report provides an analysis of `r params$countries_i` distant water fishing in `r year_int`
+This report provides an analysis of `r country_name`'s distant water fishing.
 
 # Data Analysis
 
 ```{r last-5-years}
 # calculate last 5 years in country specific data
-max_year <- max(artis_eez_i$year)
+max_year <- max(params$artis_eez_i$year)
 last_5_yrs <- seq(max_year - 4, max_year, by = 1)
 
 # df with focal countries most recent 5 years of data
@@ -51,15 +60,17 @@ artis_eez_i_5yr <- artis_eez_i %>%
 ```
 
 
-## `r params$countries_i`'s DWF Activities
+## DWF Activities
 
 ### Percent of catch in foreign waters over time
 
-```{r}
+```{r prct-dwf}
+# calc total catch
 catch_total_yr <- artis_eez_i_5yr %>% 
   group_by(year) %>% 
   summarise(total_catch = sum(live_weight_t))
 
+# calc total dwf catch & join to total catch
 catch_dwf_yr <- artis_eez_i_5yr %>% 
   filter(dwf == "foreign") %>% 
   group_by(year) %>% 
@@ -67,10 +78,7 @@ catch_dwf_yr <- artis_eez_i_5yr %>%
   left_join(catch_total_yr, by = "year") %>% 
   mutate(prct_dwf = dwf_catch/total_catch)
 
-catch_prct_dwf <- catch_dwf_yr %>% 
-  left_join(catch_total_yr, by = "year") %>% 
-  mutate(prct_dwf = dwf_catch/total_catch)
-
+# Line time series percent of total catch in foreign waters
 (fig_dwf_prct <- catch_prct_dwf %>% 
   ggplot(aes(year,prct_dwf)) +
     geom_line() +
@@ -81,6 +89,12 @@ catch_prct_dwf <- catch_dwf_yr %>%
                        limits = c(0,1),
                        expand = c(0, 0))
 )
+```
+
+
+```{r catch-eez}
+exploreARTIS::plot_ts()
+
 ```
 
 
