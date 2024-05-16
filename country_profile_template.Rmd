@@ -26,6 +26,7 @@ library(rmarkdown)
 library(knitr) # Need package version 1.44 or up for quarto
 library(countrycode)
 library(magrittr)
+library(ggplot2)
 
 ```
 
@@ -39,25 +40,48 @@ This report provides an analysis of `r params$countries_i` distant water fishing
 
 # Data Analysis
 
-## Landings mass check
-```{r eval=F}
+```{r last-5-years}
+# calculate last 5 years in country specific data
+max_year <- max(artis_eez_i$year)
+last_5_yrs <- seq(max_year - 4, max_year, by = 1)
 
-# landings mass check - filter
-artis_sau_check <- artis_sau %>% 
-  filter(habitat == "marine", 
-         method == "capture", 
-         year == year_int, 
-         source_country_iso3c == "CHN")
-
-# e^-6 or e^-9 considered 0 - haven't gained or lost any mass
-mass_diff <- sum(an_artis_eez$live_weight_t) - sum(artis_sau_check$live_weight_t)
-
-nrow_artis_eez <- nrow(an_artis_eez) 
+# df with focal countries most recent 5 years of data
+artis_eez_i_5yr <- artis_eez_i %>% 
+  filter(year %in% last_5_yrs)
 ```
 
-The difference between ARTIS live weight (tons) and SAU live weight (tons) is x.
 
-The number of rows in ARTIS EEZ is x. 
+## `r params$countries_i`'s DWF Activities
+
+### Percent of catch in foreign waters over time
+
+```{r}
+catch_total_yr <- artis_eez_i_5yr %>% 
+  group_by(year) %>% 
+  summarise(total_catch = sum(live_weight_t))
+
+catch_dwf_yr <- artis_eez_i_5yr %>% 
+  filter(dwf == "foreign") %>% 
+  group_by(year) %>% 
+  summarize(dwf_catch = sum(live_weight_t)) %>% 
+  left_join(catch_total_yr, by = "year") %>% 
+  mutate(prct_dwf = dwf_catch/total_catch)
+
+catch_prct_dwf <- catch_dwf_yr %>% 
+  left_join(catch_total_yr, by = "year") %>% 
+  mutate(prct_dwf = dwf_catch/total_catch)
+
+(fig_dwf_prct <- catch_prct_dwf %>% 
+  ggplot(aes(year,prct_dwf)) +
+    geom_line() +
+    theme_bw() +
+    labs(y = "Percent Catch in Foreign Waters",
+         x = "") +
+    scale_y_continuous(labels = scales::percent_format(accuracy = 1), 
+                       limits = c(0,1),
+                       expand = c(0, 0))
+)
+```
 
 
 ```{r, echo=FALSE}
@@ -75,7 +99,8 @@ knitr::kable(
 )
 ```
 
-### Graphs
+
+
 
 #### `r top_25[[1,1]]`
 
@@ -122,10 +147,3 @@ params$artis_eez_i %>%
   filter(sciname == top_25[[2,1]]) %>%
   plot_sankey()
 ```
-
-**To DO List**
-
-- Focal country’s DWF activities: percent of catch in foreign waters, stacked line of waters they caught in, top species caught via DWF
-- Focal country’s exports from DWF: Top 4 or 6 species caught via DWF and create stacked line graph of who consumes that. For a recent year (or few years) create sankey for each species (focal country will be far second to the left - farthest left is EEZ) column of sankey). Use consumption table for this. Sankey columns will be EEZ, source country, exporter, consumer.
-- Focal country’s imports of DWF-sourced products -  Top 4 or 6 species caught via DWF and create stacked line graph of EEZ for those. For a recent year (or few years) create sankey for each species (focal country will be far right column of sankey). Use consumption table for this. Sankey columns will be EEZ, source country, exporter, consumer.
-- Note: Can use exploreARTIS packages to assist with these figures. For NGO reports, it is good to replace scientific name with the common name using the sciname_metadata table.
