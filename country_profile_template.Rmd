@@ -59,6 +59,18 @@ artis_eez_i_5yr <- artis_eez_i %>%
   filter(year %in% last_5_yrs)
 ```
 
+```{r graph-colors}
+# copy and paste exploreARTIS:: colors
+region6_palette <- c(
+  "#741A32", # maroon
+  "#B34232", # burnt orange
+  "#D38F35", #  orange
+  "#D4B95F", # khaki
+  "#4FA2A2", # teal
+  "#114F59" # dark teal
+)
+artis_palette <- grDevices::colorRampPalette(region6_palette)
+```
 
 ## DWF Activities
 
@@ -86,14 +98,36 @@ catch_dwf_yr <- artis_eez_i_5yr %>%
     labs(y = "Percent Catch in Foreign Waters",
          x = "") +
     scale_y_continuous(labels = scales::percent_format(accuracy = 1), 
-                       limits = c(0,1),
-                       expand = c(0, 0))
+                       limits = c(0,1))
 )
 ```
 
+### DWF catch by EEZ
 
 ```{r catch-eez}
-exploreARTIS::plot_ts()
+# DWF catch x EEZ x year
+catch_eez_yr <- artis_eez_i_5yr %>% 
+  filter(dwf == "foreign") %>% 
+  group_by(year, catch_artis_country_name) %>% 
+  summarise(catch = sum(live_weight_t))
+
+# why is this only displaying 10 out of the 17? too small to display?
+(fig_catch_eez <- catch_eez_yr %>% 
+  ggplot(aes(year, catch, fill = catch_artis_country_name)) +
+    geom_area() +
+    labs(x = "",
+         y = "Catch Live Weight (tons)",
+         fill = "Catch EEZ") +
+    theme_bw() +
+     scale_fill_manual(values = artis_palette(10))
+)
+
+
+# exploreARTIS::plot_ts(catch_eez,
+#                       artis_var = 
+#                       weight = "live",
+#                       plot.type = "line",
+#                       )
 
 ```
 
