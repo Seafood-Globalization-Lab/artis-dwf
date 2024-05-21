@@ -14,7 +14,7 @@ params:
   countries_i: NULL
   artis_eez_i: NULL
   artis_sau_i: NULL
-
+  consumption_i: NULL
 ---
 
 ```{r setup, include=FALSE}
@@ -63,7 +63,6 @@ last_5_yrs <- seq(max_year - 4, max_year, by = 1)
 # df with focal countries most recent 5 years of data
 artis_eez_i_dwf_5 <- artis_eez_i %>% 
   filter(year %in% last_5_yrs)
-
 
 ```
 
@@ -152,7 +151,9 @@ exploreARTIS::plot_bar(top_species_dwf,
 ```
 
 
-```{r, echo=FALSE, eval=FALSE}
+### Top DWF Species
+
+```{r, echo=FALSE}
 
 # print top 25 DWF species
 top_6 <- artis_eez_i_dwf_5 %>%
@@ -162,13 +163,13 @@ top_6 <- artis_eez_i_dwf_5 %>%
   slice_head(n = 6) # limits df to first 25 rows
 
 knitr::kable(
-  top_6, caption = 'Top 6 Species Caught via DWF'
+  top_6, 
+  caption = 'Top 6 Species Caught via DWF', 
+  digits = 0, 
+  col.names = c("Scientific Name", "Live Weight (Tons)")
 )
 ```
 
-#### `r top_25[[1,1]]`
-
-loop through this graph generation?
 
 ```{r, echo=FALSE, fig.cap="Source Country Without Catch EEZ Information"}
 
