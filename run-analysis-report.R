@@ -8,6 +8,8 @@ library(dplyr)
 library(countrycode)
 library(exploreARTIS)
 library(rmarkdown)
+library(readr)
+library(tidyr)
 
 
 # Create directories ------------------------------------------------------
@@ -40,7 +42,6 @@ source(file.path(".", "scripts", "load_db_data.R"))
 # 1) standardize production SAU data
 # 2) proportion of landings by producer captured in recorded source EEZs
 # 3) disaggregate ARTIS by EEZ of catch - Join production SAU and ARTIS SAU data 
-
 source(file.path(".", "scripts", "clean_data.R"))
 
 
