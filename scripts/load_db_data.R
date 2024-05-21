@@ -21,6 +21,7 @@ con_heroku <- dbConnect(RPostgres::Postgres(),
 # Check that connection is established by checking which tables are present
 dbListTables(con_heroku)
 
+#FIXIT - this is not a correct query check example
 consumption <- dbGetQuery(con_heroku, 
                          "SELECT * FROM consumption
                          WHERE year >= 2016
