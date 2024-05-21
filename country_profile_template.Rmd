@@ -30,7 +30,8 @@ library(knitr) # Need package version 1.44 or up for quarto
 library(countrycode) # convert and standardize country id
 library(magrittr) # pipe function
 library(ggplot2) # visualization
-library(exploreARTIS) # custom ARTIS package 
+library(exploreARTIS) # custom ARTIS viz package 
+library(forcats) #reorder factors
 
 # iso3c to country name
 country_name <- countrycode(params$countries_i,
@@ -91,7 +92,7 @@ catch_dwf_yr <- artis_eez_i_5yr %>%
   mutate(prct_dwf = dwf_catch/total_catch)
 
 # Line time series percent of total catch in foreign waters
-(fig_dwf_prct <- catch_prct_dwf %>% 
+(fig_dwf_prct <- catch_dwf_yr %>% 
   ggplot(aes(year,prct_dwf)) +
     geom_line() +
     theme_bw() +
@@ -104,31 +105,29 @@ catch_dwf_yr <- artis_eez_i_5yr %>%
 
 ### DWF catch by EEZ
 
-```{r catch-eez}
+```{r, eval=FALSE}
 # DWF catch x EEZ x year
 catch_eez_yr <- artis_eez_i_5yr %>% 
   filter(dwf == "foreign") %>% 
   group_by(year, catch_artis_country_name) %>% 
-  summarise(catch = sum(live_weight_t))
-
-# why is this only displaying 10 out of the 17? too small to display?
-(fig_catch_eez <- catch_eez_yr %>% 
-  ggplot(aes(year, catch, fill = catch_artis_country_name)) +
-    geom_area() +
-    labs(x = "",
-         y = "Catch Live Weight (tons)",
-         fill = "Catch EEZ") +
-    theme_bw() +
-     scale_fill_manual(values = artis_palette(10))
-)
-
-
-# exploreARTIS::plot_ts(catch_eez,
-#                       artis_var = 
-#                       weight = "live",
-#                       plot.type = "line",
-#                       )
-
+  summarise(catch = sum(live_weight_t)) %>%
+  # remove grouping structure for complete
+  ungroup() %>%
+  # make implicit zeros explicit
+  complete(year, catch_artis_country_name, fill = list(catch = 0)) %>% 
+  # make column names match standard artis column names for exploreARTIS 
+  rename(live_weight_t = catch,
+         year = year,
+         producer_iso3c = catch_artis_country_name
+         )
+# plot
+exploreARTIS::plot_ts(test,
+                      artis_var = "producer_iso3c",
+                      plot.title = "DWF Catch by EEZ",
+                      prop_flow_cutoff = 0.05,
+                      plot.type = "stacked",
+                      legend.title = "EEZ"
+                      )
 ```
 
 
