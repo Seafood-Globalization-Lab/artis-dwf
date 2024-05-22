@@ -45,7 +45,8 @@ source(file.path(".", "scripts", "functions.R",
 
 # 1) standardize production SAU data
 # 2) proportion of landings by producer captured in recorded source EEZs
-# 3) disaggregate ARTIS by EEZ of catch - Join production SAU and ARTIS SAU data 
+# 3) disaggregate consumption by EEZ of catch - 
+# Join production SAU and ARTIS SAU data 
 source(file.path(".", "scripts", "clean_data.R"))
 
 # Countries of interest ---------------------------------------------------
@@ -53,7 +54,6 @@ source(file.path(".", "scripts", "clean_data.R"))
 # Vector of Oceana countries:
 # countries <- c("Belize", "Brazil", "Canada", "Chile", "Mexico", "Philippines", "Peru", "UK", "USA", "Spain", "Malaysia", "Ghana", "Senegal")
 countries <- c("Belize")
-#year_int <- c(2016, 2017, 2018, 2019, 2020)
 
 # Standardize country names
 countries_std <- countrycode(countries,
@@ -64,9 +64,44 @@ countries_i <- countries_std
 
 # Build DWF profiles ---------------------------------------------
 
+# Filter last 5 years of data
+max_year <- max(consumption_eez$year)
+last_x_yrs <- seq(max_year - 4, max_year, by = 1)
+
+consumption_eez_xyrs <- consumption_eez %>% 
+  filter(year %in% last_x_yrs)
+
+# Loop through focal countries - Build reports for each
 for (i in 1:length(countries_std)) {
   countries_i <- countries_std[i]
   
+  # 1) focal country DWF activities
+  country_i_dwf <- consumption_eez_xyrs %>% 
+    filter(source_country_iso3c == countries_i,
+           dwf == "foreign")
+  # domestic reference
+  country_i_dom <- consumption_eez_xyrs %>% 
+    filter(source_country_iso3c == countries_i,
+           dwf != "foreign")
+  
+  # 2) focal country consumption of DWF catch
+  country_i_dwf_consump <- consumption_eez_xyrs %>% 
+    filter(consumer_iso3c == countries_i,
+           dwf == "foreign")
+  # domestic reference
+  country_i_dom_consump <- consumption_eez_xyrs %>% 
+    filter(consumer_iso3c == countries_i,
+           dwf != "foreign")
+    
+  # 3) Fishing activity in focal country EEZ
+  country_i_eez_fishing <- consumption_eez_xyrs %>% 
+    filter(catch_artis_iso3 == countries_i,
+           dwf == "foreign")
+  # domestic reference
+  country_i_dom_fishing <- consumption_eez_xyrs %>% 
+    filter(catch_artis_iso3 == countries_i,
+           dwf != "foreign")
+  ########## vvv Replaced by code above
   # filter by single country of interest
   artis_eez_i <- artis_eez %>%
     filter(source_country_iso3c == countries_i)
@@ -81,7 +116,7 @@ for (i in 1:length(countries_std)) {
   consumption_i <- consumption %>% 
     filter(year %in% unique(artis_eez$year),
            source_country_iso3c == countries_i)
-  
+  ########## ^^^
   rmarkdown::render(
     input = "country_profile_template.Rmd",
     params = list(countries_i = countries_i,

@@ -79,7 +79,7 @@ prod_sau_props <- prod_sau %>%
   select(-live_weight_t)
 
 # Disaggregate ARTIS by EEZ of catch - join datasets
-artis_eez <- artis_sau %>% 
+consumption_eez <- consumption %>% 
   # prod_sau (therefor prod_sau_props) is inherently only marine capture - match artis_sau data
   filter(habitat == "marine", 
          method == "capture") %>%
@@ -89,5 +89,12 @@ artis_eez <- artis_sau %>%
                    "source_country_iso3c" = "prod_iso3", 
                    "sciname" = "SciName")) %>% 
   # recalculate live_weight_t catch - each trade and product record gets split apart by the number of catch eez from prod_sau_props - essentially assigning a probability a product was caught in a specific eez. 
-  mutate(live_weight_t = live_weight_t*prop_by_catch_eez)
+  mutate(live_weight_t = consumption_t*prop_by_catch_eez) %>% 
 # many-to-many warning is what we expect here - one row of artis_sau correlates with multiple prod_sau eez
+  group_by(year, 
+           catch_artis_iso3, 
+           source_country_iso3c, 
+           consumer_iso3c, 
+           sciname, 
+           dwf) %>% 
+  summarise(live_weight_t = sum(live_weight_t))
