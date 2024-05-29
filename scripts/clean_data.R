@@ -93,6 +93,7 @@ consumption_eez <- consumption %>%
 # many-to-many warning is what we expect here - one row of artis_sau correlates with multiple prod_sau eez
   group_by(year, 
            catch_artis_iso3, 
+           catch_artis_country_name,
            source_country_iso3c, 
            consumer_iso3c, 
            sciname, 
