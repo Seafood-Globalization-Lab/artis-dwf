@@ -20,14 +20,14 @@ scrdir <- file.path(".", "scripts", fsep = "/")
 
 # Load Data -------------------------------------------------
 #existing SAU data in ARTIS
-artis_sau <- read_csv(
-  file.path("data", "SAU_ARTIS_2010-2020.csv", 
-            fsep = "/"))
+# artis_sau <- read_csv(
+#   file.path("data", "SAU_ARTIS_2010-2020.csv", 
+#             fsep = "/"))
 
 # load new SAU data - AM from ARTIS repo ./QA/outputs/
 # Only contains species & countries standardized SAU marine capture (not EEZ) 
 prod_sau <- read_csv(
-  file.path(".", "data", "standardized_sau_prod.csv", 
+  file.path(".", "data", "standardized_sau_prod.csv",
             fsep = "/"))
 
 # Read in local SAU consumption file (eventually replace with Heroku db)
@@ -68,63 +68,43 @@ countries_i <- countries_std
 max_year <- max(consumption_eez$year)
 last_x_yrs <- seq(max_year - 4, max_year, by = 1)
 
-consumption_eez_xyrs <- consumption_eez %>% 
-  filter(year %in% last_x_yrs)
+consumption_eez <- consumption_eez %>% 
+  filter(year %in% last_x_yrs) %>% 
+  rename(producer_iso3c = source_country_iso3c,
+         source_country_iso3c = catch_artis_iso3,
+         source_country_eez_name = catch_artis_country_name)
 
 # Loop through focal countries - Build reports for each
 for (i in 1:length(countries_std)) {
   countries_i <- countries_std[i]
-  
+
   # 1) focal country DWF activities
-  country_i_dwf <- consumption_eez_xyrs %>% 
-    filter(source_country_iso3c == countries_i,
-           dwf == "foreign")
-  # domestic reference
-  country_i_dom <- consumption_eez_xyrs %>% 
-    filter(source_country_iso3c == countries_i,
-           dwf != "foreign")
-  
+  if (!exists("country_i_dwf")) {
+    country_i_dwf <- consumption_eez %>% 
+      filter(producer_iso3c == countries_i)
+  }
   # 2) focal country consumption of DWF catch
-  country_i_dwf_consump <- consumption_eez_xyrs %>% 
-    filter(consumer_iso3c == countries_i,
-           dwf == "foreign")
-  # domestic reference
-  country_i_dom_consump <- consumption_eez_xyrs %>% 
-    filter(consumer_iso3c == countries_i,
-           dwf != "foreign")
+  if (!exists("country_i_dwf_consump")) {
+    country_i_dwf_consump <- consumption_eez %>% 
+      filter(consumer_iso3c == countries_i)
+  }
     
   # 3) Fishing activity in focal country EEZ
-  country_i_eez_fishing <- consumption_eez_xyrs %>% 
-    filter(catch_artis_iso3 == countries_i,
-           dwf == "foreign")
-  # domestic reference
-  country_i_dom_fishing <- consumption_eez_xyrs %>% 
-    filter(catch_artis_iso3 == countries_i,
-           dwf != "foreign")
-  ########## vvv Replaced by code above
-  # filter by single country of interest
-  artis_eez_i <- artis_eez %>%
-    filter(source_country_iso3c == countries_i)
-  
-  artis_sau_i <- artis_sau %>% 
-    filter(habitat == "marine", 
-           method == "capture", 
-           year %in% year_int, 
-           source_country_iso3c == countries_i)
-  
-  # filter consumption table by focal country 
-  consumption_i <- consumption %>% 
-    filter(year %in% unique(artis_eez$year),
-           source_country_iso3c == countries_i)
-  ########## ^^^
+  if (!exists("country_i_eez_fishing")) {
+    country_i_eez_fishing <- consumption_eez %>% 
+      filter(eez_iso3 == countries_i)
+  }
+
   rmarkdown::render(
     input = "country_profile_template.Rmd",
     params = list(countries_i = countries_i,
-                  artis_eez_i = artis_eez_i,
-                  artis_sau_i = artis_sau_i),
+                  country_i_dwf = country_i_dwf,
+                  country_i_dwf_consump = country_i_dwf_consump,
+                  country_i_eez_fishing = country_i_eez_fishing),
     #output_dir = outdir,
     output_file = paste("dwf", countries_i, "profile.html", sep = "_")
   )
+  message(paste0("Completed rendering ", countries_i, " profile"))
 }
 
 
