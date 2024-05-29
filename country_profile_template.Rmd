@@ -13,11 +13,8 @@ editor_options:
 params: 
   countries_i: NULL
   country_i_dwf: NULL
-  country_i_dom: NULL
   country_i_dwf_consump: NULL
-  country_i_dom_consump: NULL
   country_i_eez_fishing: NULL
-  country_i_dom_fishing: NULL
 ---
 
 ```{r setup, include=FALSE}
@@ -42,9 +39,6 @@ country_name <- countrycode(params$countries_i,
                             origin = "iso3c",
                             destination = "country.name")
 
-# pull out parameters to Rmd environment
-country_i_dwf <- params$country_i_dwf
-
 ```
 
 ---
@@ -57,18 +51,34 @@ This report provides an analysis of `r country_name`'s distant water fishing.
 
 # Data Analysis
 
-```{r graph-colors}
-# copy and paste exploreARTIS:: colors
-region6_palette <- c(
-  "#741A32", # maroon
-  "#B34232", # burnt orange
-  "#D38F35", #  orange
-  "#D4B95F", # khaki
-  "#4FA2A2", # teal
-  "#114F59" # dark teal
-)
-artis_palette <- grDevices::colorRampPalette(region6_palette)
+```{r}
+# pull out parameters to Rmd environment - contains dwf = foreign and domestic
+country_i_dwf <- params$country_i_dwf
+country_i_dwf_consump <- params$country_i_dwf_consump
+country_i_eez_fishing <- params$country_i_eez_fishing
+
+# 1) focal country DWF activities
+country_i_dwf_for <- country_i_dwf %>% 
+  filter(dwf == "foreign")
+  # domestic reference
+country_i_dwf_dom <- country_i_dwf %>% 
+  filter(dwf != "foreign")
+
+# 2) focal country consumption of DWF catch
+country_i_dwf_con_for <- country_i_dwf_consump %>% 
+  filter(dwf == "foreign")
+  # domestic reference
+country_i_dom_con_dom <- country_i_dwf_consump %>% 
+  filter(dwf != "foreign")
+    
+# 3) Fishing activity in focal country EEZ
+country_i_eez_for <- country_i_eez_fishing %>% 
+  filter(dwf == "foreign")
+  # domestic reference
+country_i_eez_dom <- country_i_eez_fishing %>% 
+  filter(dwf != "foreign")
 ```
+
 
 ## DWF Activities by `r country_name`
 
@@ -76,12 +86,12 @@ artis_palette <- grDevices::colorRampPalette(region6_palette)
 
 ```{r prct-dwf}
 # calc total catch
-catch_total_yr <- country_i_dwf_5 %>% 
+catch_total_yr <- country_i_dwf %>% 
   group_by(year) %>% 
   summarise(total_catch = sum(live_weight_t))
 
 # calc total dwf catch & join to total catch
-catch_dwf_yr <- country_i_dwf_5 %>% 
+catch_dwf_yr <- country_i_dwf_for %>% 
   group_by(year) %>% 
   summarize(dwf_catch = sum(live_weight_t)) %>% 
   left_join(catch_total_yr, by = "year") %>% 
@@ -103,21 +113,9 @@ catch_dwf_yr <- country_i_dwf_5 %>%
 
 ```{r}
 # DWF catch x EEZ x year
-catch_eez_yr <- country_i_dwf_5 %>% 
-  group_by(year, catch_artis_country_name) %>% 
-  summarise(catch = sum(live_weight_t)) %>%
-  # remove grouping structure for complete
-  ungroup() %>%
-  # make implicit zeros explicit
-  complete(year, catch_artis_country_name, fill = list(catch = 0)) %>% 
-  # make column names match standard artis column names for exploreARTIS 
-  rename(live_weight_t = catch,
-         year = year,
-         producer_iso3c = catch_artis_country_name
-         )
-# plot
-exploreARTIS::plot_ts(test,
-                      artis_var = "producer_iso3c",
+
+exploreARTIS::plot_ts(country_i_dwf_for,
+                      artis_var = "source_country_eez_name",
                       #plot.title = "DWF Catch by EEZ",
                       prop_flow_cutoff = 0.05,
                       plot.type = "stacked",
@@ -127,94 +125,57 @@ exploreARTIS::plot_ts(test,
 
 ### Top Species Caught via DWF
 
-Top species caught via DWF in the last 5 years of available data (`r paste(last_5_yrs, sep = ", ")`)
+```{r}
+# Filter last 5 years of data
+max_year <- max(country_i_dwf_for$year)
+last_5_yrs <- seq(max_year - 4, max_year, by = 1)
+
+country_i_dwf_for_5yr <- country_i_dwf_for %>% 
+  filter(year %in% last_5_yrs)
+```
+
+
+Mean for the last 5 years of data (`r paste0(last_5_yrs)`)
+
+```{r eval=TRUE}
+
+exploreARTIS::plot_bar(data = country_i_dwf_for_5yr,
+                       bar_group = "sciname",
+                       common_names = TRUE,
+                       x.lab = "Quantity (tons live weight)")
+```
+
+## DWF Exports by `r country_name`
+
+Consumption of top 6 species caught via DWF
 
 ```{r}
+top_6_sp <- country_i_dwf_for_5yr %>% 
+  group_by(sciname) %>% 
+  summarise(total_live_weight_t = sum(live_weight_t)) %>% 
+  arrange(desc(total_live_weight_t)) %>% 
+  slice_head(n = 6)
 
-exploreARTIS::plot_bar(country_i_dwf_5,
-                       bar_group ="sciname")
-#FIXIT plot.title argument currently does not change title
+country_i_dwf_for_con <- country_i_dwf_for_5yr %>% 
+  filter(sciname %in% top_6_sp$sciname) 
+
+plot_ts(country_i_dwf_for_con,
+        artis_var = "consumer_iso3c",
+        prop_flow_cutoff = 0.05,
+        plot.type = "stacked",
+        legend.title = "Consumer")
 ```
 
+### Consumption of Top DWF Species
 
-### Top DWF Species 
+```{r}
+# country_i_dwf_for_con_sp <- country_i_dwf_for_con %>% 
+#   filter(sciname == top_6_sp$sciname[1])
 
-Sum across last 5 years of available data (`r paste(last_5_yrs, sep = ", ")`)
-
-```{r, echo=FALSE}
-
-# print top 25 DWF species
-top_6 <- country_i_dwf_5 %>%
-  group_by(sciname) %>%
-  summarise(live_weight_t = sum(live_weight_t)) %>%
-  arrange(desc(live_weight_t)) %>%
-  slice_head(n = 6) # limits df to first 25 rows
-
-knitr::kable(
-  top_6, 
-  caption = 'Top 6 Species Caught via DWF', 
-  digits = 0, 
-  col.names = c("Scientific Name", "Live Weight (Tons)")
-)
+plot_sankey(country_i_dwf_for_con,
+            species = top_6_sp$sciname[1],
+            prop_flow_cutoff = 0.05,
+            
+            )
 ```
 
-```{r, eval=FALSE}
-top_sp_consump <- country_i_dwf_5 %>% 
-  filter()
-
-unique(top_6$sciname)
-exploreARTIS::plot_ts(country_i_dwf_5,
-                      artis_var = "producer_iso3c",
-                      #plot.title = "DWF Catch by EEZ",
-                      prop_flow_cutoff = 0.05,
-                      plot.type = "stacked",
-                      legend.title = "EEZ"
-                      )
-```
-
-
-
-```{r, echo=FALSE, fig.cap="Source Country Without Catch EEZ Information"}
-
-# plot artis_sau$source_country_iso3c (without catch eez information)
-params$artis_eez_i %>%
- # select(-source_country_iso3c) %>%
- # rename("source_country_iso3c" = "catch_artis_iso3") %>%
-  filter(sciname == top_25[[1,1]]) %>%
-  plot_sankey()
-```
-
-```{r, echo=FALSE, fig.cap="EEZ of Catch for Source Country"}
-
-# plot with catch eez information
-params$artis_eez_i %>%
-  select(-source_country_iso3c) %>%
-  rename("source_country_iso3c" = "catch_artis_iso3") %>%
-  filter(sciname == top_25[[1,1]]) %>%
-  plot_sankey()
-```
-
-#### `r top_25[[2,1]]`
-
-```{r, echo=FALSE, fig.cap="Source Country Without Catch EEZ Information"}
-
-# plot artis_sau$source_country_iso3c (without catch eez information)
-params$artis_eez_i %>%
- # select(-source_country_iso3c) %>%
- # rename("source_country_iso3c" = "catch_artis_iso3") %>%
-  filter(sciname == top_25[[2,1]]) %>%
-  plot_sankey()
-```
-
-```{r, echo=FALSE, fig.cap="EEZ of Catch for Source Country"}
-
-# plot with catch eez information
-params$artis_eez_i %>%
-  select(-source_country_iso3c) %>%
-  rename("source_country_iso3c" = "catch_artis_iso3") %>%
-  filter(sciname == top_25[[2,1]]) %>%
-  plot_sankey()
-```
-
-
-## `r country_name`'s 
