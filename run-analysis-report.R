@@ -34,6 +34,10 @@ prod_sau <- read_csv(
 consumption <- read_csv(
   file.path(".", "data", "complete_consumption.csv"))
 
+sciname_metadata <- read_csv(
+  file.path(".", "data", "sciname_metadata.csv")
+)
+
 # Run Scripts -------------------------------------------------------------
 
 # load functions
@@ -62,17 +66,21 @@ countries_std <- countrycode(countries,
 # for testing only
 countries_i <- countries_std
 
-# Build DWF profiles ---------------------------------------------
+# limit sciname metadata -------------
+sciname_metadata <- sciname_metadata %>% 
+  select(sciname, common_name)
 
-# Filter last 5 years of data
+# Filter last 5 years of data ----------------------------
 max_year <- max(consumption_eez$year)
 last_x_yrs <- seq(max_year - 4, max_year, by = 1)
 
-consumption_eez <- consumption_eez %>% 
+consumption_eez_2 <- consumption_eez %>% 
   filter(year %in% last_x_yrs) %>% 
   rename(producer_iso3c = source_country_iso3c,
          source_country_iso3c = catch_artis_iso3,
          source_country_eez_name = catch_artis_country_name)
+
+# Build DWF profiles ---------------------------------------------
 
 # Loop through focal countries - Build reports for each
 for (i in 1:length(countries_std)) {
@@ -80,19 +88,19 @@ for (i in 1:length(countries_std)) {
 
   # 1) focal country DWF activities
   if (!exists("country_i_dwf")) {
-    country_i_dwf <- consumption_eez %>% 
+    country_i_dwf <- consumption_eez_2 %>% 
       filter(producer_iso3c == countries_i)
   }
   # 2) focal country consumption of DWF catch
   if (!exists("country_i_dwf_consump")) {
-    country_i_dwf_consump <- consumption_eez %>% 
+    country_i_dwf_consump <- consumption_eez_2 %>% 
       filter(consumer_iso3c == countries_i)
   }
     
   # 3) Fishing activity in focal country EEZ
   if (!exists("country_i_eez_fishing")) {
-    country_i_eez_fishing <- consumption_eez %>% 
-      filter(eez_iso3 == countries_i)
+    country_i_eez_fishing <- consumption_eez_2 %>% 
+      filter(source_country_iso3c == countries_i)
   }
 
   rmarkdown::render(
@@ -100,7 +108,8 @@ for (i in 1:length(countries_std)) {
     params = list(countries_i = countries_i,
                   country_i_dwf = country_i_dwf,
                   country_i_dwf_consump = country_i_dwf_consump,
-                  country_i_eez_fishing = country_i_eez_fishing),
+                  country_i_eez_fishing = country_i_eez_fishing,
+                  sciname_metadata = sciname_metadata),
     #output_dir = outdir,
     output_file = paste("dwf", countries_i, "profile.html", sep = "_")
   )
