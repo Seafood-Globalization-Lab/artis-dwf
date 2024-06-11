@@ -11,12 +11,14 @@ library(rmarkdown)
 library(readr)
 library(tidyr)
 library(sqldf)
+library(glue)
 
 
 # Create directories ------------------------------------------------------
 
 outdir <- file.path(".", "output", fsep = "/")
 scrdir <- file.path(".", "scripts", fsep = "/")
+anndir <- file.path(".", "annotations", fsep = "/")
 
 # Load Data -------------------------------------------------
 #existing SAU data in ARTIS
@@ -38,6 +40,8 @@ sciname_metadata <- read_csv(
   file.path(".", "data", "sciname_metadata.csv")
 )
 
+message("data import is complete")
+
 # Run Scripts -------------------------------------------------------------
 
 # load functions
@@ -52,6 +56,8 @@ source(file.path(".", "scripts", "functions.R",
 # 3) disaggregate consumption by EEZ of catch - 
 # Join production SAU and ARTIS SAU data 
 source(file.path(".", "scripts", "clean_data.R"))
+
+message("running clean_data.R is complete")
 
 # Countries of interest ---------------------------------------------------
 
@@ -105,11 +111,11 @@ for (i in 1:length(countries_std)) {
                   country_i_dwf = country_i_dwf,
                   country_i_dwf_consump = country_i_dwf_consump,
                   country_i_eez_fishing = country_i_eez_fishing,
-                  sciname_metadata = sciname_metadata),
-    #output_dir = outdir,
+                  sciname_metadata = sciname_metadata), 
+    output_dir = outdir,
     output_file = paste("dwf", countries_i, "profile.html", sep = "_")
   )
-  message(paste0("Completed rendering ", countries_i, " profile"))
+  message(glue("Compteted rendering {countries_i}'s profile"))
 }
 
 
