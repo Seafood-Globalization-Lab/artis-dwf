@@ -31,10 +31,16 @@ library(knitr) # Need package version 1.44 or up for quarto
 library(countrycode) # convert and standardize country id
 library(magrittr) # pipe function
 library(ggplot2) # visualization
-library(exploreARTIS) # custom ARTIS viz package 
 library(forcats) #reorder factors
 library(stringr)
 library(purrr) 
+# install old version of exploreARTIS
+#install_github("Seafood-Globalization-Lab/exploreARTIS@c0f34b90172f716068c9b98df5ed491ca5085162")
+# install AM updates branch, force new install, and do not update global enviro package versions
+install_github("Seafood-Globalization-Lab/exploreARTIS@AM-updates",
+               upgrade = "never", 
+               force = TRUE)
+library(exploreARTIS) # custom ARTIS viz package 
 
 country_iso3c <- params$countries_i
 
@@ -71,10 +77,10 @@ dwf_dom <- country_i_dwf %>%
 # 2) focal country consumption 
   # fish caught in its own water
 dwf_con_dom <- country_i_dwf_consump %>% 
-  filter(source_country_iso3c == countries_i)
+  filter(eez_iso3c == country_iso3c)
   # caught in a different
 dwf_con_for <- country_i_dwf_consump %>% 
-  filter(source_country_iso3c != countries_i)
+  filter(eez_iso3c != country_iso3c)
     
 # 3) Fishing activity in focal country EEZ
 eez_for <- country_i_eez_fishing %>% 
@@ -120,7 +126,7 @@ catch_dwf_yr <- dwf_for %>%
 # DWF catch x EEZ x year
 
 exploreARTIS::plot_ts(dwf_for,
-                      artis_var = "source_country_eez_name",
+                      artis_var = "eez_name",
                       #plot.title = "DWF Catch by EEZ",
                       prop_flow_cutoff = 0.05,
                       plot.type = "stacked",
@@ -146,7 +152,7 @@ Mean for the last 5 years of data (`r paste0(last_5_yrs)`)
 
 exploreARTIS::plot_bar(data = dwf_for_5yr,
                        bar_group = "sciname",
-                       common_names = TRUE,
+                       #common_names = TRUE,
                        x.lab = "Quantity (tons live weight)")
 ```
 
@@ -178,41 +184,52 @@ plot_ts(dwf_for_con,
 ### Consumption of Top DWF Species - Caught by `r country_name`
 
 ```{r}
-knitr::kable(top_6_sp)
+knitr::kable(top_6_sp %>% 
+               select(common_name, 
+                      sciname, 
+                      total_live_weight_t),
+            col.names = c("Common name", 
+                          "Scientific name", 
+                          "Total live weight (tons)"))
 ```
 
 ```{r}
 # Renaming hack to make consumption work with exploreARTIS::plot_sankey()
 dwf_for_con_sanky <- dwf_for_con %>% 
   rename(exporter_iso3c = producer_iso3c,
-         importer_iso3c = consumer_iso3c) %>% 
-  select(-c(source_country_eez_name,dwf))
+         importer_iso3c = consumer_iso3c,
+         source_country_iso3c = eez_iso3c) %>% 
+  select(-c(eez_name,dwf))
 ```
 
 Sankey Diagram Key:
 Source EEZ --> Producer --> Consumer
 
 ```{r echo=FALSE, results='hide', fig.keep='all'}
-purrr::map(top_6_sp$sciname, ~ plot_sankey(dwf_for_con_sanky, species = .x))
+
+purrr::map(top_6_sp$sciname, ~ plot_sankey(dwf_for_con_sanky %>% 
+                                             filter(.x == sciname),
+                                           plot.title = .x))
 ```
 
 ## `r country_name`'s consumption of DWF-sourced products
 
 ### Fish caught `r country_name`'s own waters
-```{r}
+```{r eval=FALSE}
+# need fill to be producer nation
 
 plot_ts(dwf_con_dom,
-        artis_var = "source_country_eez_name",
+        artis_var = "exporter_iso3c",
         prop_flow_cutoff = 0.05,
         plot.type = "stacked",
-        legend.title = "EEZ"
+        legend.title = ""
         )
 ```
 
-```{r}
+```{r eval=FALSE}
 
 plot_ts(dwf_con_for,
-        artis_var = "source_country_eez_name",
+        artis_var = "eez_name",
         prop_flow_cutoff = 0.05,
         plot.type = "stacked",
         legend.title = "EEZ"
