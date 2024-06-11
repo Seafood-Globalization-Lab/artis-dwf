@@ -57,7 +57,8 @@ source(file.path(".", "scripts", "clean_data.R"))
 
 # Vector of Oceana countries:
 # countries <- c("Belize", "Brazil", "Canada", "Chile", "Mexico", "Philippines", "Peru", "UK", "USA", "Spain", "Malaysia", "Ghana", "Senegal")
-countries <- c("Belize")
+#countries <- c("Belize")
+countries <- c("Philippines", "Ghana")
 
 # Standardize country names
 countries_std <- countrycode(countries,
@@ -77,8 +78,8 @@ last_x_yrs <- seq(max_year - 4, max_year, by = 1)
 consumption_eez_2 <- consumption_eez %>% 
   filter(year %in% last_x_yrs) %>% 
   rename(producer_iso3c = source_country_iso3c,
-         source_country_iso3c = catch_artis_iso3,
-         source_country_eez_name = catch_artis_country_name)
+         eez_iso3c = catch_artis_iso3,
+         eez_name = catch_artis_country_name)
 
 # Build DWF profiles ---------------------------------------------
 
@@ -87,21 +88,16 @@ for (i in 1:length(countries_std)) {
   countries_i <- countries_std[i]
 
   # 1) focal country DWF activities
-  if (!exists("country_i_dwf")) {
     country_i_dwf <- consumption_eez_2 %>% 
       filter(producer_iso3c == countries_i)
-  }
+
   # 2) focal country consumption of DWF catch
-  if (!exists("country_i_dwf_consump")) {
     country_i_dwf_consump <- consumption_eez_2 %>% 
       filter(consumer_iso3c == countries_i)
-  }
     
   # 3) Fishing activity in focal country EEZ
-  if (!exists("country_i_eez_fishing")) {
     country_i_eez_fishing <- consumption_eez_2 %>% 
-      filter(source_country_iso3c == countries_i)
-  }
+      filter(eez_iso3c == countries_i)
 
   rmarkdown::render(
     input = "country_profile_template.Rmd",
