@@ -8,11 +8,11 @@ library(DBI)
 
 # Initial database pulls
 
-# Database connection
+# Database connection - needs .Rproj at root directory to run .Renviron with new R session
 con <- dbConnect(RPostgres::Postgres(),
                  dbname=Sys.getenv("DB_NAME"),
-                 host="localhost",
-                 port="5432",
+                 host=Sys.getenv("localhost"),
+                 port=Sys.getenv("5432"),
                  user=Sys.getenv("DB_USERNAME"),
                  password=Sys.getenv("DB_PASSWORD"))
 
