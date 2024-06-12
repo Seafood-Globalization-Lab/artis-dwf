@@ -83,6 +83,7 @@ last_x_yrs <- seq(max_year - 4, max_year, by = 1)
 
 consumption_eez_2 <- consumption_eez %>% 
   filter(year %in% last_x_yrs) %>% 
+  # rename AM's cleaning data script column names
   rename(producer_iso3c = source_country_iso3c,
          eez_iso3c = catch_artis_iso3,
          eez_name = catch_artis_country_name)
