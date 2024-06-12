@@ -82,14 +82,14 @@ dwf_dom <- country_i_dwf %>%
   # fish caught in its own water
 dwf_consum_dom <- country_i_dwf_consump %>% 
   filter(eez_iso3c == country_iso3c)
-  # caught in a different
+  # caught in a different 
 dwf_consum_frgn <- country_i_dwf_consump %>% 
   filter(eez_iso3c != country_iso3c)
     
-# 3) Fishing activity in focal country EEZ
+# 3) Fishing activity in focal country EEZ by other countries
 eez_frgn <- country_i_eez_fishing %>% 
   filter(dwf == "foreign")
-  # domestic reference
+  # domestic reference - same as dwf_dom
 eez_dom <- country_i_eez_fishing %>% 
   filter(dwf != "foreign")
 ```
@@ -221,24 +221,42 @@ purrr::map(top_6_sp$sciname, ~ plot_sankey(dwf_frgn_consum_sankey %>%
 ## `r country_name`'s consumption of DWF-sourced products
 
 ### Fish caught `r country_name`'s own waters
-```{r eval=FALSE}
+```{r}
+# dwf_consum_dom is  Focal country consumption of catch in its own waters
+# could be domestic catch or catch by a different nation
 # need fill to be producer nation
+# function not updated yet
 
-plot_ts(dwf_consum_dom,
-        artis_var = "exporter_iso3c",
+dwf_consum_dom_plot <- dwf_consum_dom %>% 
+  filter(dwf == "domestic")
+
+plot_ts(dwf_consum_dom_plot,
+        artis_var = "producer_iso3c",
+        prop_flow_cutoff = 0.05,
+        plot.type = "stacked",
+        legend.title = ""
+        )
+
+```
+
+### Fish consumed by `r country_name`, caught in its waters by a differnt country
+
+```{r}
+
+dwf_consum_dom_plot2 <- dwf_consum_dom %>% 
+  filter(dwf == "foreign")
+
+plot_ts(dwf_consum_dom_plot2,
+        artis_var = "producer_iso3c",
         prop_flow_cutoff = 0.05,
         plot.type = "stacked",
         legend.title = ""
         )
 ```
 
-```{r eval=FALSE}
+### Fish consumed by `r country_name`, caught by `r country_name` in a different EEZ
 
-plot_ts(dwf_consum_frgn,
-        artis_var = "eez_name",
-        prop_flow_cutoff = 0.05,
-        plot.type = "stacked",
-        legend.title = "EEZ"
-        )
+```{r}
+
 ```
 
