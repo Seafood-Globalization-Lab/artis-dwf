@@ -8,12 +8,13 @@ output:
   html_document:
     theme: paper
     toc: yes
+    number_sections: true
 editor_options: 
   chunk_output_type: console
 params: 
   countries_i: NULL
   country_i_dwf: NULL
-  country_i_dwf_consump: NULL
+  country_i_consump: NULL
   country_i_eez_fishing: NULL
   sciname_metadata: NULL
 ---
@@ -33,7 +34,9 @@ library(magrittr) # pipe function
 library(ggplot2) # visualization
 library(forcats) #reorder factors
 library(stringr)
-library(purrr) 
+library(purrr) # iteration 
+library(scales) # adjust display of plot numbers
+library(cowplot) # arange plots together
 # install old version of exploreARTIS
 #install_github("Seafood-Globalization-Lab/exploreARTIS@c0f34b90172f716068c9b98df5ed491ca5085162")
 # install AM updates branch, force new install, and do not update global enviro package versions
@@ -68,7 +71,7 @@ This report provides an analysis of `r country_name`'s distant water fishing.
 ```{r}
 # pull out parameters to Rmd environment - contains dwf = foreign and domestic
 country_i_dwf <- params$country_i_dwf
-country_i_dwf_consump <- params$country_i_dwf_consump
+country_i_consump <- params$country_i_consump
 country_i_eez_fishing <- params$country_i_eez_fishing
 
 # 1) focal country DWF activities
@@ -78,12 +81,15 @@ dwf_frgn <- country_i_dwf %>%
 dwf_dom <- country_i_dwf %>% 
   filter(dwf != "foreign")
 
-# 2) focal country consumption 
-  # fish caught in its own water
-dwf_consum_dom <- country_i_dwf_consump %>% 
+# 2) Focal country's consumption 
+  # a) fish caught in its own waters (regardless of who is fishing)
+consum_dom <- country_i_consump %>% 
   filter(eez_iso3c == country_iso3c)
-  # caught in a different 
-dwf_consum_frgn <- country_i_dwf_consump %>% 
+  # b) fish caught in different waters: 
+    #  - domestic production by a different country (trade)
+    #  - dwf production from a different country (trade)
+    #  - focal country's dwf catch
+consum_frgn <- country_i_consump %>% 
   filter(eez_iso3c != country_iso3c)
     
 # 3) Fishing activity in focal country EEZ by other countries
@@ -127,7 +133,6 @@ catch_dwf_yr <- dwf_frgn %>%
 ```{r, figure_1, results='asis'}
 ```
 
-
 ### DWF catch by EEZ
 
 ```{r}
@@ -139,7 +144,8 @@ exploreARTIS::plot_ts(dwf_frgn,
                       prop_flow_cutoff = 0.05,
                       plot.type = "stacked",
                       legend.title = "Source EEZ"
-                      )
+                      ) +
+  scale_y_continuous(labels = scales::comma)
 ```
 
 ### Top Species Caught via DWF
@@ -161,12 +167,13 @@ Mean for the last 5 years of data (`r paste0(last_5_yrs)`)
 exploreARTIS::plot_bar(data = dwf_frgn_5yr %>% 
                          left_join(sciname_metadata, by = "sciname"),
                        bar_group = "common_name",
-                       x.lab = "Quantity (tons live weight)")
+                       x.lab = "Quantity (tons live weight)") +
+  scale_x_continuous(labels = scales::comma)
 ```
 
 ## DWF Exports by `r country_name`
 
-Consumption of top 6 species caught via DWF (not including NA)
+Consumption of top 6 species caught by `r country_name` via DWF `r paste0(last_5_yrs)` (not including NA)
 
 ```{r}
 
@@ -185,11 +192,12 @@ plot_ts(dwf_frgn_consum,
         artis_var = "consumer_iso3c",
         prop_flow_cutoff = 0.05,
         plot.type = "stacked",
-        legend.title = "Consumer")
+        legend.title = "Consumer") +
+  scale_y_continuous(labels = scales::comma)
 ```
 
 
-### Consumption of Top DWF Species - Caught by `r country_name`
+### Top DWF Species caught by `r country_name` (`r paste0(last_5_yrs)`)
 
 ```{r}
 knitr::kable(top_6_sp %>% 
@@ -201,57 +209,104 @@ knitr::kable(top_6_sp %>%
                           "Total live weight (tons)"))
 ```
 
-### DWF source EEZ --> Producer --> Consumer flows (2019)
+### DWF flows (source EEZ --> Producer --> Consumer)
 
 ```{r echo=FALSE, results='hide', fig.keep='all'}
 
 dwf_frgn_consum_sankey <- dwf_frgn_consum %>% 
-  filter(year == 2019) %>% 
+  filter(year %in% last_5_yrs) %>% 
   exploreARTIS::add_country_name("producer_iso3c") %>% 
   exploreARTIS::add_country_name("consumer_iso3c")
 
-purrr::map(top_6_sp$sciname, ~ plot_sankey(dwf_frgn_consum_sankey %>% 
-                                             filter(.x == sciname),
-                                           cols = c("eez_name", 
-                                                    "producer_iso3c_name",
-                                                    "consumer_iso3c_name"),
-                                           plot.title = .x))
+purrr::map(top_6_sp$sciname, 
+           ~ plot_sankey(dwf_frgn_consum_sankey %>% filter(.x == sciname),
+                         cols = c("eez_name", 
+                                  "producer_iso3c_name",
+                                  "consumer_iso3c_name"),
+                         plot.title = .x))
 ```
 
-## `r country_name`'s consumption of DWF-sourced products
+## `r country_name` Consumption
 
-### Fish caught `r country_name`'s own waters
-```{r}
-# dwf_consum_dom is  Focal country consumption of catch in its own waters
+### `r country_name` consumption of catch from its own waters
+```{r fig.width=11}
+# consum_dom is  Focal country consumption of catch in its own waters
 # could be domestic catch or catch by a different nation
 # need fill to be producer nation
 # function not updated yet
 
-dwf_consum_dom_plot <- dwf_consum_dom %>% 
-  filter(dwf == "domestic")
+consum_dom_dom_plot <- consum_dom %>%
+  filter(dwf == "domestic",
+         producer_iso3c == country_iso3c) %>% 
+  mutate(producer_name = countrycode(producer_iso3c,
+                                     origin = "iso3c",
+                                     destination = "country.name"))
 
-plot_ts(dwf_consum_dom_plot,
-        artis_var = "producer_iso3c",
-        prop_flow_cutoff = 0.05,
-        plot.type = "stacked",
-        legend.title = ""
-        )
+consum_dom_frgn_plot <- consum_dom %>% 
+  filter(dwf == "foreign",
+         producer_iso3c != country_iso3c) %>% 
+  mutate(producer_name = countrycode(producer_iso3c,
+                                     origin = "iso3c",
+                                     destination = "country.name"))
 
+plot1 <- plot_ts(consum_dom_dom_plot,        
+                 artis_var = "producer_name",
+                 prop_flow_cutoff = 0.05,
+                 plot.type = "stacked",
+                 plot.title = "Domestic production"
+                 ) +
+  scale_y_continuous(labels = scales::comma)
+
+plot2 <- plot_ts(consum_dom_frgn_plot,        
+                 artis_var = "producer_name",
+                 prop_flow_cutoff = 0.05,
+                 plot.type = "stacked",
+                 plot.title = "Foreign fleet production"
+                 )
+# combine plot side-by-side
+cowplot::plot_grid(plot1, plot2)
 ```
 
-### Fish consumed by `r country_name`, caught in its waters by a differnt country
+### Fish consumed by `r country_name` from another country's waters
 
-```{r}
+```{r fig.width=11}
+ # facet line plot - - Other EEZ
 
-dwf_consum_dom_plot2 <- dwf_consum_dom %>% 
-  filter(dwf == "foreign")
+# create facet variable for 3 other EEZ consumption scenarios:
+ #    domestic production by a different country
+ #    dwf production from a different country
+ #    focal country dwf
+consum_frgn_facet <- consum_frgn %>% 
+  mutate(
+    consum_foreign = case_when(
+      dwf == "domestic" & producer_iso3c != country_iso3c ~ 
+        "Foreign domestic\nproduction",
+      dwf == "foreign" & producer_iso3c != country_iso3c ~ 
+        "Foreign DWF\nproduction",
+      dwf == "foreign" & producer_iso3c == country_iso3c ~
+        glue("{country_name} DWF\nproduction")),
+    producer_name = countrycode::countrycode(producer_iso3c,
+                                             origin = "iso3c",
+                                             destination = "country.name")
+  )
+  
+# other option for renaming - requires adding facet_wrap argument in plot_ts
+# facet_names <- as_labeller(c(
+#   "frgn_dom_prod" = "Foreign domestic\nproduction",
+#   "frgn_dwf_prod" = "Foreign DWF production",
+#   "dom_dwf_prod" = glue("{country_iso3c} DWF production")
+# )
+# facet_wrap(~Humidity.RH., nrow = 2, labeller = facet_names)
 
-plot_ts(dwf_consum_dom_plot2,
-        artis_var = "producer_iso3c",
-        prop_flow_cutoff = 0.05,
-        plot.type = "stacked",
-        legend.title = ""
-        )
+(consum_frgn_facet_plot <- plot_ts(consum_frgn_facet,
+                                  artis_var = "producer_name",
+                                  plot.type = "stacked",
+                                  facet_variable = "consum_foreign",
+                                  facet_values = 3,
+                                  prop_flow_cutoff = 0.05) +
+    scale_y_continuous(labels = scales::comma)
+  )
+
 ```
 
 ### Fish consumed by `r country_name`, caught by `r country_name` in a different EEZ
