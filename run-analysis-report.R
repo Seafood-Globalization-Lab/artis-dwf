@@ -94,12 +94,14 @@ consumption_eez_2 <- consumption_eez %>%
 for (i in 1:length(countries_std)) {
   countries_i <- countries_std[i]
 
+  message(glue::glue("started rendering {countries_i} profile"))
+  
   # 1) focal country DWF activities
     country_i_dwf <- consumption_eez_2 %>% 
       filter(producer_iso3c == countries_i)
 
   # 2) focal country consumption of DWF catch
-    country_i_dwf_consump <- consumption_eez_2 %>% 
+    country_i_consump <- consumption_eez_2 %>% 
       filter(consumer_iso3c == countries_i)
     
   # 3) Fishing activity in focal country EEZ
@@ -110,13 +112,12 @@ for (i in 1:length(countries_std)) {
     input = "country_profile_template.Rmd",
     params = list(countries_i = countries_i,
                   country_i_dwf = country_i_dwf,
-                  country_i_dwf_consump = country_i_dwf_consump,
+                  country_i_consump = country_i_consump,
                   country_i_eez_fishing = country_i_eez_fishing,
                   sciname_metadata = sciname_metadata), 
     output_dir = outdir,
     output_file = paste("dwf", countries_i, "profile.html", sep = "_")
   )
-  message(glue("Compteted rendering {countries_i}'s profile"))
 }
 
 
