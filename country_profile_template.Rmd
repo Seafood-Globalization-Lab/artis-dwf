@@ -91,6 +91,9 @@ consum_dom <- country_i_consump %>%
     #  - focal country's dwf catch
 consum_frgn <- country_i_consump %>% 
   filter(eez_iso3c != country_iso3c)
+  # c) country's consumption of DWF fish
+consum_dwf <- country_i_consump %>% 
+  filter(dwf == "foreign")
     
 # 3) Fishing activity in focal country EEZ by other countries
 eez_frgn <- country_i_eez_fishing %>% 
@@ -156,18 +159,19 @@ max_year <- max(dwf_frgn$year)
 last_5_yrs <- seq(max_year - 4, max_year, by = 1)
 
 dwf_frgn_5yr <- dwf_frgn %>% 
-  filter(year %in% last_5_yrs)
+  filter(year %in% last_5_yrs) %>% 
+  left_join(sciname_metadata, by = "sciname")
 ```
 
 
-Mean for the last 5 years of data (`r paste0(last_5_yrs)`)
+Sum for the last 5 years of data (`r paste0(last_5_yrs)`)
 
 ```{r eval=TRUE}
 
-exploreARTIS::plot_bar(data = dwf_frgn_5yr %>% 
-                         left_join(sciname_metadata, by = "sciname"),
+exploreARTIS::plot_bar(data = dwf_frgn_5yr,
                        bar_group = "common_name",
-                       x.lab = "Quantity (tons live weight)") +
+                       x.lab = "Quantity (tons live weight)",
+                       top_n = 6) +
   scale_x_continuous(labels = scales::comma)
 ```
 
@@ -178,11 +182,11 @@ Consumption of top 6 species caught by `r country_name` via DWF `r paste0(last_5
 ```{r}
 
 top_6_sp <- dwf_frgn_5yr %>% 
-  group_by(sciname) %>% 
-  summarise(total_live_weight_t = sum(live_weight_t)) %>% 
+  group_by(sciname, common_name) %>% 
+  summarise(total_live_weight_t = sum(live_weight_t),
+            .groups = "drop") %>% 
   arrange(desc(total_live_weight_t)) %>% 
-  slice_head(n = 6) %>% 
-  left_join(sciname_metadata, by = "sciname") 
+  slice_head(n = 6)
 
 dwf_frgn_consum <- dwf_frgn_5yr %>% 
   filter(sciname %in% top_6_sp$sciname) %>% 
@@ -206,7 +210,7 @@ knitr::kable(top_6_sp %>%
                       total_live_weight_t),
             col.names = c("Common name", 
                           "Scientific name", 
-                          "Total live weight (tons)"))
+                          "live weight (tons)"))
 ```
 
 ### DWF flows (source EEZ --> Producer --> Consumer)
@@ -218,8 +222,8 @@ dwf_frgn_consum_sankey <- dwf_frgn_consum %>%
   exploreARTIS::add_country_name("producer_iso3c") %>% 
   exploreARTIS::add_country_name("consumer_iso3c")
 
-purrr::map(top_6_sp$sciname, 
-           ~ plot_sankey(dwf_frgn_consum_sankey %>% filter(.x == sciname),
+purrr::map(top_6_sp$common_name, 
+           ~ plot_sankey(dwf_frgn_consum_sankey %>% filter(.x == common_name),
                          cols = c("eez_name", 
                                   "producer_iso3c_name",
                                   "consumer_iso3c_name"),
@@ -289,14 +293,6 @@ consum_frgn_facet <- consum_frgn %>%
                                              origin = "iso3c",
                                              destination = "country.name")
   )
-  
-# other option for renaming - requires adding facet_wrap argument in plot_ts
-# facet_names <- as_labeller(c(
-#   "frgn_dom_prod" = "Foreign domestic\nproduction",
-#   "frgn_dwf_prod" = "Foreign DWF production",
-#   "dom_dwf_prod" = glue("{country_iso3c} DWF production")
-# )
-# facet_wrap(~Humidity.RH., nrow = 2, labeller = facet_names)
 
 (consum_frgn_facet_plot <- plot_ts(consum_frgn_facet,
                                   artis_var = "producer_name",
@@ -309,9 +305,59 @@ consum_frgn_facet <- consum_frgn %>%
 
 ```
 
-### Fish consumed by `r country_name`, caught by `r country_name` in a different EEZ
+### Top 6 species consumed by `r country_name` -- Caught via DWF 
+
+```{r}
+# Filter last 5 years of data
+max_year <- max(consum_dwf$year)
+last_5_yrs <- seq(max_year - 4, max_year, by = 1)
+
+consum_dwf_5yr <- consum_dwf %>% 
+  filter(year %in% last_5_yrs) %>% 
+  exploreARTIS::add_country_name("producer_iso3c") %>% 
+  exploreARTIS::add_country_name("consumer_iso3c") %>% 
+  left_join(sciname_metadata, by = "sciname") 
+
+```
+
+Mean for the last 5 years of data (`r paste0(last_5_yrs)`)
+
+```{r eval=TRUE}
+
+exploreARTIS::plot_bar(data = consum_dwf_5yr,
+                       bar_group = "common_name",
+                       x.lab = "Quantity (tons live weight)",
+                       top_n = 6) +
+  scale_x_continuous(labels = scales::comma)
+```
 
 ```{r}
 
+top_6_sp <- consum_dwf_5yr %>% 
+  group_by(sciname, common_name) %>% 
+  summarise(total_live_weight_t = mean(live_weight_t),
+            .groups = "drop") %>% 
+  arrange(desc(total_live_weight_t)) %>% 
+  slice_head(n = 6)
+
+knitr::kable(top_6_sp %>% 
+               select(common_name, 
+                      sciname, 
+                      total_live_weight_t),
+            col.names = c("Common name", 
+                          "Scientific name", 
+                          "Mean live weight per year (tons)"))
+```
+
+### DWF flows (Source EEZ --> Producer --> Consumer)
+
+```{r echo=FALSE, results='hide', fig.keep='all'}
+
+purrr::map(top_6_sp$common_name, 
+           ~ plot_sankey(consum_dwf_5yr %>% filter(.x == common_name),
+                         cols = c("eez_name", 
+                                  "producer_iso3c_name",
+                                  "consumer_iso3c_name"),
+                         plot.title = .x))
 ```
 
