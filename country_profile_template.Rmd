@@ -2,13 +2,14 @@
 author: 
   name: "Seafood Globalization Lab"
   affiliation: "School of Aquatic and Fishery Sciences, University of Washington"
-  orcid: "0000-0000-0000-0000"
 date: "`r Sys.Date()`"
 output: 
-  html_document:
-    theme: paper
+  cleanrmd::html_document_clean:
+    theme: almond
     toc: yes
+    toc_depth: 2
     number_sections: true
+    number_serctions_depth: 2
 editor_options: 
   chunk_output_type: console
 params: 
@@ -106,7 +107,7 @@ eez_dom <- country_i_eez_fishing %>%
 
 ## DWF Activities by `r country_name`
 
-### Percent of catch in foreign waters over time
+### Percent DWF of total catch
 
 ```{r prct-dwf}
 # calc total catch
@@ -230,7 +231,7 @@ purrr::map(top_6_sp$common_name,
                          plot.title = .x))
 ```
 
-## `r country_name` Consumption
+## `r country_name` Consumption of DWF 
 
 ### `r country_name` consumption of catch from its own waters
 ```{r fig.width=11}
@@ -305,7 +306,7 @@ consum_frgn_facet <- consum_frgn %>%
 
 ```
 
-### Top 6 species consumed by `r country_name` -- Caught via DWF 
+### Top 6 species consumed by `r country_name` -- Caught via DWF (includes `r country_name` and other countries)
 
 ```{r}
 # Filter last 5 years of data
@@ -320,7 +321,7 @@ consum_dwf_5yr <- consum_dwf %>%
 
 ```
 
-Mean for the last 5 years of data (`r paste0(last_5_yrs)`)
+Sum for the last 5 years of data (`r paste0(last_5_yrs)`)
 
 ```{r eval=TRUE}
 
@@ -349,7 +350,7 @@ knitr::kable(top_6_sp %>%
                           "Mean live weight per year (tons)"))
 ```
 
-### DWF flows (Source EEZ --> Producer --> Consumer)
+### DWF consumption flows (Source EEZ --> Producer --> Consumer)
 
 ```{r echo=FALSE, results='hide', fig.keep='all'}
 
