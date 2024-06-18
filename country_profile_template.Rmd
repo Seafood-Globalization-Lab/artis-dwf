@@ -2,14 +2,14 @@
 author: 
   name: "Seafood Globalization Lab"
   affiliation: "School of Aquatic and Fishery Sciences, University of Washington"
-date: "`r Sys.Date()`"
-output: 
-  cleanrmd::html_document_clean:
-    theme: almond
-    toc: yes
-    toc_depth: 2
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  pdf_document:
+    toc: true
     number_sections: true
-    number_serctions_depth: 2
+documentclass: article
+fontsize: 11pt
+geometry: margin=1in
 editor_options: 
   chunk_output_type: console
 params: 
@@ -25,7 +25,13 @@ params:
 # set global code chunk options
 knitr::opts_chunk$set(echo = FALSE, 
                       message = FALSE,
-                      warning = FALSE)
+                      warning = FALSE,
+                      fig.width = 6,
+                      fig.asp = 0.618,
+                      fig.show = "hold",
+                      out.width = "70%",
+                      fig.align = "center",
+                      cache = TRUE)
 
 # load packages
 library(rmarkdown)
@@ -69,7 +75,7 @@ This report provides an analysis of `r country_name`'s distant water fishing.
 
 # Data Analysis
 
-```{r}
+```{r create-dataframes}
 # pull out parameters to Rmd environment - contains dwf = foreign and domestic
 country_i_dwf <- params$country_i_dwf
 country_i_consump <- params$country_i_consump
@@ -139,7 +145,7 @@ catch_dwf_yr <- dwf_frgn %>%
 
 ### DWF catch by EEZ
 
-```{r}
+```{r fig-line-dwf-eez}
 # DWF catch x EEZ x year
 
 exploreARTIS::plot_ts(dwf_frgn,
@@ -167,7 +173,7 @@ dwf_frgn_5yr <- dwf_frgn %>%
 
 Sum for the last 5 years of data (`r paste0(last_5_yrs)`)
 
-```{r eval=TRUE}
+```{r fig-bar-dwf-species, eval=TRUE}
 
 exploreARTIS::plot_bar(data = dwf_frgn_5yr,
                        bar_group = "common_name",
@@ -180,7 +186,7 @@ exploreARTIS::plot_bar(data = dwf_frgn_5yr,
 
 Consumption of top 6 species caught by `r country_name` via DWF `r paste0(last_5_yrs)` (not including NA)
 
-```{r}
+```{r fig-stacked-consum-dwf}
 
 top_6_sp <- dwf_frgn_5yr %>% 
   group_by(sciname, common_name) %>% 
@@ -204,7 +210,7 @@ plot_ts(dwf_frgn_consum,
 
 ### Top DWF Species caught by `r country_name` (`r paste0(last_5_yrs)`)
 
-```{r}
+```{r table-dwf-species}
 knitr::kable(top_6_sp %>% 
                select(common_name, 
                       sciname, 
@@ -216,7 +222,7 @@ knitr::kable(top_6_sp %>%
 
 ### DWF flows (source EEZ --> Producer --> Consumer)
 
-```{r echo=FALSE, results='hide', fig.keep='all'}
+```{r figs-dwf-species-sankeys, echo=FALSE, results='hide', fig.keep='all'}
 
 dwf_frgn_consum_sankey <- dwf_frgn_consum %>% 
   filter(year %in% last_5_yrs) %>% 
@@ -224,17 +230,19 @@ dwf_frgn_consum_sankey <- dwf_frgn_consum %>%
   exploreARTIS::add_country_name("consumer_iso3c")
 
 purrr::map(top_6_sp$common_name, 
-           ~ plot_sankey(dwf_frgn_consum_sankey %>% filter(.x == common_name),
+           ~ plot_sankey(dwf_frgn_consum_sankey %>% 
+                           filter(.x == common_name),
                          cols = c("eez_name", 
                                   "producer_iso3c_name",
                                   "consumer_iso3c_name"),
-                         plot.title = .x))
+                         plot.title = .x) + 
+             theme(plot.title = element_text(size=14)))
 ```
 
 ## `r country_name` Consumption of DWF 
 
 ### `r country_name` consumption of catch from its own waters
-```{r fig.width=11}
+```{r ,out.width="100%", fig.width=8.57 }
 # consum_dom is  Focal country consumption of catch in its own waters
 # could be domestic catch or catch by a different nation
 # need fill to be producer nation
@@ -274,7 +282,7 @@ cowplot::plot_grid(plot1, plot2)
 
 ### Fish consumed by `r country_name` from another country's waters
 
-```{r fig.width=11}
+```{r out.width="100%", fig.width=8.57}
  # facet line plot - - Other EEZ
 
 # create facet variable for 3 other EEZ consumption scenarios:
@@ -323,7 +331,7 @@ consum_dwf_5yr <- consum_dwf %>%
 
 Sum for the last 5 years of data (`r paste0(last_5_yrs)`)
 
-```{r eval=TRUE}
+```{r}
 
 exploreARTIS::plot_bar(data = consum_dwf_5yr,
                        bar_group = "common_name",
@@ -359,6 +367,8 @@ purrr::map(top_6_sp$common_name,
                          cols = c("eez_name", 
                                   "producer_iso3c_name",
                                   "consumer_iso3c_name"),
-                         plot.title = .x))
+                         plot.title = .x) + 
+             theme(plot.title = element_text(size=14))
+)
 ```
 

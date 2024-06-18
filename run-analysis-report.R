@@ -117,7 +117,7 @@ for (i in 1:length(countries_std)) {
                   country_i_eez_fishing = country_i_eez_fishing,
                   sciname_metadata = sciname_metadata), 
     output_dir = outdir,
-    output_file = paste("dwf", countries_i, "profile.html", sep = "_")
+    output_file = paste("dwf", countries_i, "profile.pdf", sep = "_")
   )
 }
 
