@@ -1,17 +1,8 @@
 ---
-author: 
-  name: "Seafood Globalization Lab"
-  affiliation: "School of Aquatic and Fishery Sciences, University of Washington"
+author: "Seafood Globalization Lab"
 date: "`r format(Sys.Date(), '%B %d, %Y')`"
 output:
-  pdf_document:
-    toc: true
-    number_sections: true
-documentclass: article
-fontsize: 11pt
-geometry: margin=1in
-editor_options: 
-  chunk_output_type: console
+  tufte::tufte_handout:
 params: 
   countries_i: NULL
   country_i_dwf: NULL
@@ -23,14 +14,17 @@ params:
 ```{r setup, include=FALSE}
 
 # set global code chunk options
-knitr::opts_chunk$set(echo = FALSE, 
+knitr::opts_chunk$set(echo = FALSE,
                       message = FALSE,
                       warning = FALSE,
+                     # fig.fullwidth = TRUE,
                       fig.width = 6,
                       fig.asp = 0.618,
-                      fig.show = "hold",
-                      out.width = "70%",
-                      fig.align = "center",
+                    #  fig.show = "hold",
+                      fig.pos = 'h',
+                    #  out.width = "70%",
+                    #  fig.align = "center",
+                      eval.after = "fig.cap", # eval code first then options
                       cache = TRUE)
 
 # load packages
@@ -69,11 +63,9 @@ knitr::read_chunk(file.path(anndir,
 title: "Oceana Distant Water Fishing Report: `r country_name`"
 ---
 
-# Introduction
+# Overview
 
-This report provides an analysis of `r country_name`'s distant water fishing.
-
-# Data Analysis
+This report provides an analysis of `r country_name`'s distant water fishing. This pdf uses Tufte style formatting and separate `.R` files to pull in country specific markdown annotations. LaTeX formatting underlying this often makes figures float away to locations where spacing is optimal -- write out text first then place figures as a final tweak.
 
 ```{r create-dataframes}
 # pull out parameters to Rmd environment - contains dwf = foreign and domestic
@@ -111,11 +103,9 @@ eez_dom <- country_i_eez_fishing %>%
 ```
 
 
-## DWF Activities by `r country_name`
+# DWF Activities by `r country_name`
 
-### Percent DWF of total catch
-
-```{r prct-dwf}
+```{r prct-dwf, fig.cap= "Percent DWF of total catch"}
 # calc total catch
 catch_total_yr <- country_i_dwf %>% 
   group_by(year) %>% 
@@ -143,10 +133,7 @@ catch_dwf_yr <- dwf_frgn %>%
 ```{r, figure_1, results='asis'}
 ```
 
-### DWF catch by EEZ
-
-```{r fig-line-dwf-eez}
-# DWF catch x EEZ x year
+```{r fig-line-dwf-eez, fig.cap="DWF catch by EEZ and year"}
 
 exploreARTIS::plot_ts(dwf_frgn,
                       artis_var = "eez_name",
@@ -158,7 +145,6 @@ exploreARTIS::plot_ts(dwf_frgn,
   scale_y_continuous(labels = scales::comma)
 ```
 
-### Top Species Caught via DWF
 
 ```{r}
 # Filter last 5 years of data
@@ -171,9 +157,7 @@ dwf_frgn_5yr <- dwf_frgn %>%
 ```
 
 
-Sum for the last 5 years of data (`r paste0(last_5_yrs)`)
-
-```{r fig-bar-dwf-species, eval=TRUE}
+```{r fig-bar-dwf-species, eval=TRUE, fig.cap=paste0("Top species caught via DWF. Sum for the last 5 years of available data (", paste(last_5_yrs, collapse = ", "), ")")}
 
 exploreARTIS::plot_bar(data = dwf_frgn_5yr,
                        bar_group = "common_name",
@@ -182,11 +166,7 @@ exploreARTIS::plot_bar(data = dwf_frgn_5yr,
   scale_x_continuous(labels = scales::comma)
 ```
 
-## DWF Exports by `r country_name`
-
-Consumption of top 6 species caught by `r country_name` via DWF `r paste0(last_5_yrs)` (not including NA)
-
-```{r fig-stacked-consum-dwf}
+```{r fig-stacked-consum-dwf, fig.cap=paste0("DWF exports by ", country_name, " in the most recent 5 years of data (", paste(last_5_yrs, collapse = ", "), ") and not including NAs")}
 
 top_6_sp <- dwf_frgn_5yr %>% 
   group_by(sciname, common_name) %>% 
@@ -207,9 +187,6 @@ plot_ts(dwf_frgn_consum,
   scale_y_continuous(labels = scales::comma)
 ```
 
-
-### Top DWF Species caught by `r country_name` (`r paste0(last_5_yrs)`)
-
 ```{r table-dwf-species}
 knitr::kable(top_6_sp %>% 
                select(common_name, 
@@ -217,13 +194,14 @@ knitr::kable(top_6_sp %>%
                       total_live_weight_t),
             col.names = c("Common name", 
                           "Scientific name", 
-                          "live weight (tons)"))
+                          "live weight (tons)"),
+            caption = paste0("Top DWF Species caught by ", country_name, ". Sum of most recent 5 years of data (", paste(last_5_yrs, collapse = ", "), ")")
+            )
 ```
 
-### DWF flows (source EEZ --> Producer --> Consumer)
 
-```{r figs-dwf-species-sankeys, echo=FALSE, results='hide', fig.keep='all'}
-
+```{r figs-dwf-species-sankeys, echo=FALSE, results='hide', fig.keep='all', fig.cap=paste0(top_6_sp$common_name, ": caught via DWF by ", country_name, " (source EEZ --> producer --> consumer)")}
+# fig.cap = c('first plot', 'second plot') # will provide unique captions to plots
 dwf_frgn_consum_sankey <- dwf_frgn_consum %>% 
   filter(year %in% last_5_yrs) %>% 
   exploreARTIS::add_country_name("producer_iso3c") %>% 
@@ -239,10 +217,11 @@ purrr::map(top_6_sp$common_name,
              theme(plot.title = element_text(size=14)))
 ```
 
-## `r country_name` Consumption of DWF 
+# `r country_name` Consumption of DWF 
 
-### `r country_name` consumption of catch from its own waters
-```{r ,out.width="100%", fig.width=8.57 }
+```{r  ,out.width="100%", fig.width=8.57,fig.cap= paste0(country_name, " consumption of catch from its own waters")}
+# 
+
 # consum_dom is  Focal country consumption of catch in its own waters
 # could be domestic catch or catch by a different nation
 # need fill to be producer nation
@@ -280,9 +259,9 @@ plot2 <- plot_ts(consum_dom_frgn_plot,
 cowplot::plot_grid(plot1, plot2)
 ```
 
-### Fish consumed by `r country_name` from another country's waters
 
-```{r out.width="100%", fig.width=8.57}
+```{r fig-facet-consump, out.width="100%", fig.width=8.57, fig.cap=paste0("Fish consumed by ", country_name, " from another country's waters")}
+#
  # facet line plot - - Other EEZ
 
 # create facet variable for 3 other EEZ consumption scenarios:
@@ -314,8 +293,6 @@ consum_frgn_facet <- consum_frgn %>%
 
 ```
 
-### Top 6 species consumed by `r country_name` -- Caught via DWF (includes `r country_name` and other countries)
-
 ```{r}
 # Filter last 5 years of data
 max_year <- max(consum_dwf$year)
@@ -329,9 +306,8 @@ consum_dwf_5yr <- consum_dwf %>%
 
 ```
 
-Sum for the last 5 years of data (`r paste0(last_5_yrs)`)
 
-```{r}
+```{r, fig-bar-top-sp-consump, fig.cap=paste0("Top species consumed by ", country_name, " caught via DWF by ", country_name, " and other countries. Sum for the last 5 years of data (", paste0(last_5_yrs, collapse = ", "), ").")}
 
 exploreARTIS::plot_bar(data = consum_dwf_5yr,
                        bar_group = "common_name",
@@ -340,7 +316,7 @@ exploreARTIS::plot_bar(data = consum_dwf_5yr,
   scale_x_continuous(labels = scales::comma)
 ```
 
-```{r}
+```{r table-top-sp-consumed}
 
 top_6_sp <- consum_dwf_5yr %>% 
   group_by(sciname, common_name) %>% 
@@ -355,12 +331,12 @@ knitr::kable(top_6_sp %>%
                       total_live_weight_t),
             col.names = c("Common name", 
                           "Scientific name", 
-                          "Mean live weight per year (tons)"))
+                          "Mean live weight per year (tons)"),
+            caption = paste0("Top species consumed by ", country_name, " caught via DWF by ", country_name, " and other countries. Sum for the last 5 years of data (", paste0(last_5_yrs, collapse = ", "), ")."))
 ```
 
-### DWF consumption flows (Source EEZ --> Producer --> Consumer)
 
-```{r echo=FALSE, results='hide', fig.keep='all'}
+```{r figs-sankey-consump, echo=FALSE, results='hide', fig.keep='all', fig.cap=paste0(top_6_sp$common_name, ": ", country_name, " consumption of distant water fishing products (source EEZ --> producer --> consumer)")}
 
 purrr::map(top_6_sp$common_name, 
            ~ plot_sankey(consum_dwf_5yr %>% filter(.x == common_name),

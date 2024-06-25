@@ -13,6 +13,7 @@ library(tidyr)
 library(sqldf)
 library(glue)
 library(cleanrmd)
+library(tufte)
 
 
 # Create directories ------------------------------------------------------
@@ -65,7 +66,7 @@ message("running clean_data.R is complete")
 # Vector of Oceana countries:
 # countries <- c("Belize", "Brazil", "Canada", "Chile", "Mexico", "Philippines", "Peru", "UK", "USA", "Spain", "Malaysia", "Ghana", "Senegal")
 #countries <- c("Belize")
-countries <- c("Philippines", "Ghana")
+countries <- c("Philippines")
 
 # Standardize country names
 countries_std <- countrycode(countries,
@@ -120,38 +121,6 @@ for (i in 1:length(countries_std)) {
     output_file = paste("dwf", countries_i, "profile.pdf", sep = "_")
   )
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
