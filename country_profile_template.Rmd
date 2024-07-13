@@ -421,7 +421,7 @@ write_csv(top_6_csv, file.path("output", "common_name_na.csv"))
 ```{r, 14-19-figs-sankey-consump, results='asis'}
 ```
 
-```{r figs-sankey-consump, eval= TRUE, echo=FALSE, results='hide', fig.keep='all', fig.cap=paste0(top_6_sp_consum$common_name, ": ", country_name, " consumption of distant water fishing products in the most recent available data (", paste(unique(consum_dwf$year), "). The flows represent the EEZ where the product was caught --> producer country (who caught the product) --> consumer country (who consumed the end product))")}
+```{r figs-sankey-consump, eval= TRUE, echo=FALSE, results='hide', fig.keep='all', fig.cap=paste0(top_6_sp_consum$common_name, ": ", country_name, " consumption of distant water fishing products in the most recent available data (", paste(unique(consum_dwf$year), "). The flows represent the EEZ where the product was caught --> producer country (who caught the product) --> consumer country (who consumed the end product))"))}
 # eval only if all common names are matched (no NAs)
 purrr::map(top_6_sp_consum$common_name, 
            ~ plot_sankey(consum_dwf %>% 
