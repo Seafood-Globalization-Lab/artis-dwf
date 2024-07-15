@@ -198,29 +198,58 @@ top_6_sp_dwf <- dwf_frgn %>%
 #   scale_x_continuous(labels = scales::comma)
 # )
 
+# exploreARTIS::plot_bar(data = top_6_sp_dwf,
+#                                bar_group = "common_name",
+#                                x.lab = "Quantity (tons live weight)") +
+#   scale_x_continuous(labels = scales::comma) +
+#   # add quantity labels for values less than max value (outside of bar)
+#   geom_shadowtext(
+#     data = subset(top_6_sp_dwf, live_weight_t < max(top_6_sp_dwf$live_weight_t)), 
+#     aes(x = live_weight_t, y = common_name, 
+#         label = scales::comma(round(live_weight_t))),
+#     hjust = 0,
+#     nudge_x = 1000,
+#     colour = "#114F59", #default RGB color from plot_bar
+#     bg.colour = "white",
+#     bg.r = 0.2,
+#     size = 3) +
+#   # add quantity label for max value (inside bar)
+#   geom_text(
+#     data = subset(top_6_sp_dwf, live_weight_t == max(top_6_sp_dwf$live_weight_t)),
+#     aes(live_weight_t, y = common_name, 
+#         label = scales::comma(round(live_weight_t))),
+#     hjust = 0,
+#     nudge_x = -max(top_6_sp_dwf$live_weight_t)*0.1,
+#     colour = "white",
+#     size = 3
+# )
+
 exploreARTIS::plot_bar(data = top_6_sp_dwf,
                                bar_group = "common_name",
                                x.lab = "Quantity (tons live weight)") +
   scale_x_continuous(labels = scales::comma) +
+  # Add quantity labels for values below the threshold (outside of bar)
   geom_shadowtext(
-    data = subset(top_6_sp_dwf, live_weight_t < max(top_6_sp_dwf$live_weight_t)), 
+    data = subset(top_6_sp_dwf, live_weight_t < max(top_6_sp_dwf$live_weight_t) * 0.8), 
     aes(x = live_weight_t, y = common_name, 
         label = scales::comma(round(live_weight_t))),
     hjust = 0,
-    nudge_x = 1000,
-    colour = "#114F59", #default RGB color from plot_bar
+    nudge_x = 0.025 * max(top_6_sp_dwf$live_weight_t), # Dynamic nudge value
+    colour = "#114F59", # default RGB color from plot_bar
     bg.colour = "white",
     bg.r = 0.2,
-    size = 3) +
+    size = 3
+  ) +
+  # Add quantity labels for values above the threshold (inside bar)
   geom_text(
-    data = subset(top_6_sp_dwf, live_weight_t == max(top_6_sp_dwf$live_weight_t)),
-    aes(live_weight_t, y = common_name, 
+    data = subset(top_6_sp_dwf, live_weight_t >= max(top_6_sp_dwf$live_weight_t) * 0.8),
+    aes(x = live_weight_t, y = common_name, 
         label = scales::comma(round(live_weight_t))),
-    hjust = 0,
-    nudge_x = -max(top_6_sp_dwf$live_weight_t)*0.1,
+    hjust = 1,
+    nudge_x = -0.02 * max(top_6_sp_dwf$live_weight_t), # Adjust the nudge value
     colour = "white",
     size = 3
-)
+  )
 ```
 
 ```{r, 3-fig-bar-dwf-species, eval= nrow(dwf_frgn) > 0, results='asis'}
@@ -390,38 +419,73 @@ consum_dwf <- consum_dwf %>%
 
 ```
 
+```{r top-sp-consumed, eval=FALSE}
+
+top_6_sp_consum <- consum_dwf %>% 
+  group_by(sciname, common_name) %>% 
+  # total live_weight
+  summarise(live_weight_t = mean(live_weight_t),
+            .groups = "drop") %>% 
+  arrange(desc(live_weight_t)) %>% 
+  slice_head(n = 6)
+
+```
+
 Note: Data is filtered to the last 5 years of available data
 
 ```{r, fig-bar-top-sp-consump, eval=TRUE, fig.cap=paste0("Top species consumed by ", country_name, " caught via distant water fishing by ", country_name, " and other countries. Sum of the most recent years of data available (", paste(unique(consum_dwf$year), collapse = ", "), ").")}
 
-exploreARTIS::plot_bar(data = consum_dwf,
-                       bar_group = "common_name",
-                       x.lab = "Quantity (tons live weight)",
-                       top_n = 6) +
-  scale_x_continuous(labels = scales::comma)
+# exploreARTIS::plot_bar(data = top_6_sp_consum,
+#                        bar_group = "common_name",
+#                        x.lab = "Quantity (tons live weight)",
+#                        top_n = 6) +
+#   scale_x_continuous(labels = scales::comma) +
+#   # add quantity labels for values less than max value (outside of bar)
+#   geom_shadowtext(
+#     data = top_6_sp_consum,
+#     aes(x = live_weight_t, y = common_name, 
+#         label = scales::comma(round(live_weight_t))),
+#     hjust = 0,
+#     nudge_x = 0.025*top_6_sp_consum$live_weight_t,
+#     colour = "#114F59", #default RGB color from plot_bar
+#     bg.colour = "white",
+#     bg.r = 0.2,
+#     size = 3) 
+
+exploreARTIS::plot_bar(data = top_6_sp_consum,
+                               bar_group = "common_name",
+                               x.lab = "Quantity (tons live weight)") +
+  scale_x_continuous(labels = scales::comma) +
+  # Add quantity labels for values below the threshold (outside of bar)
+  geom_shadowtext(
+    data = subset(top_6_sp_consum, live_weight_t < max(top_6_sp_consum$live_weight_t) * 0.8), 
+    aes(x = live_weight_t, y = common_name, 
+        label = scales::comma(round(live_weight_t))),
+    hjust = 0,
+    nudge_x = 0.025 * max(top_6_sp_consum$live_weight_t), # Dynamic nudge value
+    colour = "#114F59", # default RGB color from plot_bar
+    bg.colour = "white",
+    bg.r = 0.2,
+    size = 3
+  ) +
+  # Add quantity labels for values above the threshold (inside bar)
+  geom_text(
+    data = subset(top_6_sp_consum, live_weight_t >= max(top_6_sp_consum$live_weight_t) * 0.8),
+    aes(x = live_weight_t, y = common_name, 
+        label = scales::comma(round(live_weight_t))),
+    hjust = 1,
+    nudge_x = -0.02 * max(top_6_sp_consum$live_weight_t), # Adjust the nudge value
+    colour = "white",
+    size = 3
+  )
+
+
 ```
 
 ```{r, 13-fig-bar-top-sp-consump, results='asis'}
 ```
 
-```{r table-top-sp-consumed, eval=FALSE}
 
-top_6_sp_consum <- consum_dwf %>% 
-  group_by(sciname, common_name) %>% 
-  summarise(total_live_weight_t = mean(live_weight_t),
-            .groups = "drop") %>% 
-  arrange(desc(total_live_weight_t)) %>% 
-  slice_head(n = 6)
-
-knitr::kable(top_6_sp_consum %>% 
-               select(common_name, 
-                      sciname, 
-                      total_live_weight_t),
-            col.names = c("Common name", 
-                          "Scientific name", 
-                          "Mean live weight per year (tons)"),
-            caption = paste0("Top species consumed by ", country_name, " caught via DWF by ", country_name, " and other countries. Sum for the last 5 years of data (", paste(unique(consum_dwf$year), collapse = ", "), ")."))
-```
 
 ```{r, 2-table-top-sp-consumed, results='asis', eval=FALSE}
 ```
