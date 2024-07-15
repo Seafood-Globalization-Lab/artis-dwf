@@ -50,6 +50,7 @@ library(cowplot) # arange plots together
 #                upgrade = "never", 
 #                force = TRUE)
 library(exploreARTIS) # custom ARTIS viz package 
+library(shadowtext) # custom labeling on horizontal bar figures
 
 # load parameter into object
 country_iso3c <- params$countries_i
@@ -179,25 +180,50 @@ exploreARTIS::plot_ts(dwf_frgn,
 
 Note: Data is filtered to the last 5 years of available data.
 
-```{r fig-bar-dwf-species, eval= nrow(dwf_frgn) > 0, fig.cap=paste0("Top species caught via distant water fishing. Sum for the last 5 years of available data (", paste(unique(dwf_frgn$year), collapse = ", "), ")")}
-
-exploreARTIS::plot_bar(data = dwf_frgn,
-                       bar_group = "common_name",
-                       x.lab = "Quantity (tons live weight)",
-                       top_n = 6) +
-  scale_x_continuous(labels = scales::comma)
-```
-
-```{r, 3-fig-bar-dwf-species, eval= nrow(dwf_frgn) > 0, results='asis'}
-```
-
 ```{r}
 top_6_sp_dwf <- dwf_frgn %>% 
   group_by(sciname, common_name) %>% 
-  summarise(total_live_weight_t = sum(live_weight_t),
+  # total live weight (tons)
+  summarise(live_weight_t = sum(live_weight_t),
             .groups = "drop") %>% 
-  arrange(desc(total_live_weight_t)) %>% 
+  arrange(desc(live_weight_t)) %>% 
   slice_head(n = 6)
+```
+
+```{r fig-bar-dwf-species, eval= nrow(dwf_frgn) > 0, fig.cap=paste0("Top species caught via distant water fishing by tons of live weight. Sum for the last 5 years of available data (", paste(unique(dwf_frgn$year), collapse = ", "), ")")}
+
+# exploreARTIS::plot_bar(data = top_6_sp_dwf,
+#                        bar_group = "common_name",
+#                        x.lab = "Quantity (tons live weight)") +
+#   scale_x_continuous(labels = scales::comma)
+# )
+
+exploreARTIS::plot_bar(data = top_6_sp_dwf,
+                               bar_group = "common_name",
+                               x.lab = "Quantity (tons live weight)") +
+  scale_x_continuous(labels = scales::comma) +
+  geom_shadowtext(
+    data = subset(top_6_sp_dwf, live_weight_t < max(top_6_sp_dwf$live_weight_t)), 
+    aes(x = live_weight_t, y = common_name, 
+        label = scales::comma(round(live_weight_t))),
+    hjust = 0,
+    nudge_x = 1000,
+    colour = "#114F59", #default RGB color from plot_bar
+    bg.colour = "white",
+    bg.r = 0.2,
+    size = 3) +
+  geom_text(
+    data = subset(top_6_sp_dwf, live_weight_t == max(top_6_sp_dwf$live_weight_t)),
+    aes(live_weight_t, y = common_name, 
+        label = scales::comma(round(live_weight_t))),
+    hjust = 0,
+    nudge_x = -max(top_6_sp_dwf$live_weight_t)*0.1,
+    colour = "white",
+    size = 3
+)
+```
+
+```{r, 3-fig-bar-dwf-species, eval= nrow(dwf_frgn) > 0, results='asis'}
 ```
 
 
