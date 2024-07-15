@@ -60,6 +60,8 @@ sciname_common <- sciname_metadata %>%
           common_name = "blackmouth croaker") %>% # found in fb_common_to_sci
   add_row(sciname = "paralichthyidae", 
           common_name = "large-tooth flounder") %>% #fishbase website family
+  add_row(sciname = "cephea",
+          common_name = "cephea genus jelly") %>% 
   # replace common names with "=" with shortened version
   mutate(common_name = if_else(str_detect(common_name, "="), 
                                str_extract(common_name, "(?<=\\=)[^\\)]+"), 
@@ -92,8 +94,8 @@ message("running clean_data.R is complete")
 # Vector of Oceana countries:
 countries <- c("Belize", "Brazil", "Canada", "Chile", "Mexico", "Philippines", "Peru", "UK", "USA", "Spain", "Malaysia", "Ghana", "Senegal")
 #countries <- c("Belize")
-#countries <- c("Belize", "Brazil", "Canada")
-#countries <- "Chile"
+#countries <- c("Malaysia", "Belize", "Brazil", "Canada")
+#countries <- "Malaysia"
 
 # Standardize country names
 countries_std <- countrycode(countries,
