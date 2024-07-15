@@ -163,7 +163,7 @@ if (nrow(catch_dwf_yr) == 0) {
 ```{r, 1-fig-prct-dwf, results='asis'}
 ```
 
-```{r fig-line-dwf-eez, eval= TRUE, fig.cap=paste0("The quantity of distant water fishing caught by ", country_name, " by the EEZ it was caught in and year")}
+```{r fig-line-dwf-eez, eval= TRUE, fig.cap=paste0("The quantity of distant water fishing caught by ", country_name, " by the source EEZ it was caught in by year")}
 
 exploreARTIS::plot_ts(dwf_frgn,
                       artis_var = "eez_name",
@@ -192,45 +192,14 @@ top_6_sp_dwf <- dwf_frgn %>%
 
 ```{r fig-bar-dwf-species, eval= nrow(dwf_frgn) > 0, fig.cap=paste0("Top species caught via distant water fishing by tons of live weight. Sum for the last 5 years of available data (", paste(unique(dwf_frgn$year), collapse = ", "), ")")}
 
-# exploreARTIS::plot_bar(data = top_6_sp_dwf,
-#                        bar_group = "common_name",
-#                        x.lab = "Quantity (tons live weight)") +
-#   scale_x_continuous(labels = scales::comma)
-# )
-
-# exploreARTIS::plot_bar(data = top_6_sp_dwf,
-#                                bar_group = "common_name",
-#                                x.lab = "Quantity (tons live weight)") +
-#   scale_x_continuous(labels = scales::comma) +
-#   # add quantity labels for values less than max value (outside of bar)
-#   geom_shadowtext(
-#     data = subset(top_6_sp_dwf, live_weight_t < max(top_6_sp_dwf$live_weight_t)), 
-#     aes(x = live_weight_t, y = common_name, 
-#         label = scales::comma(round(live_weight_t))),
-#     hjust = 0,
-#     nudge_x = 1000,
-#     colour = "#114F59", #default RGB color from plot_bar
-#     bg.colour = "white",
-#     bg.r = 0.2,
-#     size = 3) +
-#   # add quantity label for max value (inside bar)
-#   geom_text(
-#     data = subset(top_6_sp_dwf, live_weight_t == max(top_6_sp_dwf$live_weight_t)),
-#     aes(live_weight_t, y = common_name, 
-#         label = scales::comma(round(live_weight_t))),
-#     hjust = 0,
-#     nudge_x = -max(top_6_sp_dwf$live_weight_t)*0.1,
-#     colour = "white",
-#     size = 3
-# )
-
 exploreARTIS::plot_bar(data = top_6_sp_dwf,
                                bar_group = "common_name",
                                x.lab = "Quantity (tons live weight)") +
   scale_x_continuous(labels = scales::comma) +
   # Add quantity labels for values below the threshold (outside of bar)
   geom_shadowtext(
-    data = subset(top_6_sp_dwf, live_weight_t < max(top_6_sp_dwf$live_weight_t) * 0.8), 
+    data = subset(top_6_sp_dwf, 
+                  live_weight_t < max(top_6_sp_dwf$live_weight_t) * 0.8), 
     aes(x = live_weight_t, y = common_name, 
         label = scales::comma(round(live_weight_t))),
     hjust = 0,
@@ -242,7 +211,8 @@ exploreARTIS::plot_bar(data = top_6_sp_dwf,
   ) +
   # Add quantity labels for values above the threshold (inside bar)
   geom_text(
-    data = subset(top_6_sp_dwf, live_weight_t >= max(top_6_sp_dwf$live_weight_t) * 0.8),
+    data = subset(top_6_sp_dwf, 
+                  live_weight_t >= max(top_6_sp_dwf$live_weight_t) * 0.8),
     aes(x = live_weight_t, y = common_name, 
         label = scales::comma(round(live_weight_t))),
     hjust = 1,
@@ -251,6 +221,11 @@ exploreARTIS::plot_bar(data = top_6_sp_dwf,
     size = 3
   )
 ```
+
+```{r, eval = nrow(dwf_frgn) == 0}
+cat(paste0("There is no recorded DWF by ", country_name, " in other countries EEZs."))
+```
+
 
 ```{r, 3-fig-bar-dwf-species, eval= nrow(dwf_frgn) > 0, results='asis'}
 ```
@@ -270,6 +245,14 @@ plot_ts(dwf_frgn_consum,
   scale_y_continuous(labels = scales::comma)
 ```
 
+FIXTHIS: should this only include the top species caught via DWF? Code for plot currently filters like this:
+```
+dwf_frgn_consum <- dwf_frgn %>% 
+  filter(sciname %in% top_6_sp_dwf$sciname) %>% 
+  ungroup()
+```
+This makes sense for Sankey plots, but revist if this consumer plot needs this filter also. 
+
 ```{r save-top-6-sp-dwf, eval = FALSE}
 # Record missing common_name values for correction
 top_6_csv <- read_csv(file.path("output", "common_name_na.csv"))
@@ -282,18 +265,6 @@ top_6_csv <- rbind(top_6_csv, na_rows_dwf)
 
 
 ```{r, 4-fig-stacked-consum-dwf, results='asis'}
-```
-
-```{r table-dwf-species, eval=FALSE}
-knitr::kable(top_6_sp_dwf %>% 
-               select(common_name, 
-                      sciname, 
-                      total_live_weight_t),
-            col.names = c("Common name", 
-                          "Scientific name", 
-                          "live weight (tons)"),
-            caption = paste0("Top DWF Species caught by ", country_name, ". Sum of most recent 5 years of data (", paste(unique(dwf_frgn$year), collapse = ", "), ")")
-            )
 ```
 
 ```{r, 1-table-dwf-species, results='asis', eval=FALSE}
@@ -419,7 +390,7 @@ consum_dwf <- consum_dwf %>%
 
 ```
 
-```{r top-sp-consumed, eval=FALSE}
+```{r top-sp-consumed, eval=TRUE}
 
 top_6_sp_consum <- consum_dwf %>% 
   group_by(sciname, common_name) %>% 
@@ -435,30 +406,14 @@ Note: Data is filtered to the last 5 years of available data
 
 ```{r, fig-bar-top-sp-consump, eval=TRUE, fig.cap=paste0("Top species consumed by ", country_name, " caught via distant water fishing by ", country_name, " and other countries. Sum of the most recent years of data available (", paste(unique(consum_dwf$year), collapse = ", "), ").")}
 
-# exploreARTIS::plot_bar(data = top_6_sp_consum,
-#                        bar_group = "common_name",
-#                        x.lab = "Quantity (tons live weight)",
-#                        top_n = 6) +
-#   scale_x_continuous(labels = scales::comma) +
-#   # add quantity labels for values less than max value (outside of bar)
-#   geom_shadowtext(
-#     data = top_6_sp_consum,
-#     aes(x = live_weight_t, y = common_name, 
-#         label = scales::comma(round(live_weight_t))),
-#     hjust = 0,
-#     nudge_x = 0.025*top_6_sp_consum$live_weight_t,
-#     colour = "#114F59", #default RGB color from plot_bar
-#     bg.colour = "white",
-#     bg.r = 0.2,
-#     size = 3) 
-
 exploreARTIS::plot_bar(data = top_6_sp_consum,
                                bar_group = "common_name",
                                x.lab = "Quantity (tons live weight)") +
   scale_x_continuous(labels = scales::comma) +
   # Add quantity labels for values below the threshold (outside of bar)
   geom_shadowtext(
-    data = subset(top_6_sp_consum, live_weight_t < max(top_6_sp_consum$live_weight_t) * 0.8), 
+    data = subset(top_6_sp_consum, 
+                  live_weight_t < max(top_6_sp_consum$live_weight_t) * 0.8), 
     aes(x = live_weight_t, y = common_name, 
         label = scales::comma(round(live_weight_t))),
     hjust = 0,
@@ -470,7 +425,8 @@ exploreARTIS::plot_bar(data = top_6_sp_consum,
   ) +
   # Add quantity labels for values above the threshold (inside bar)
   geom_text(
-    data = subset(top_6_sp_consum, live_weight_t >= max(top_6_sp_consum$live_weight_t) * 0.8),
+    data = subset(top_6_sp_consum, 
+                  live_weight_t >= max(top_6_sp_consum$live_weight_t) * 0.8),
     aes(x = live_weight_t, y = common_name, 
         label = scales::comma(round(live_weight_t))),
     hjust = 1,
@@ -484,8 +440,6 @@ exploreARTIS::plot_bar(data = top_6_sp_consum,
 
 ```{r, 13-fig-bar-top-sp-consump, results='asis'}
 ```
-
-
 
 ```{r, 2-table-top-sp-consumed, results='asis', eval=FALSE}
 ```
@@ -526,3 +480,83 @@ purrr::map(top_6_sp_consum$common_name,
            )
 ```
 
+# DWF in `r country_name` EEZ waters by other countries
+
+```{r fig-line-eez-dwf, fig.cap=paste0("The quantity of distant water fishing caught in ", country_name, " EEZ waters by forign countries")}
+
+eez_frgn_plot <- eez_frgn %>% 
+  exploreARTIS::add_country_name("producer_iso3c") %>% 
+  exploreARTIS::add_country_name("consumer_iso3c")
+
+# Check if the dataframe is empty
+if (nrow(eez_frgn_plot) == 0) {
+  # Create a new dataframe with the necessary structure and zero values
+  eez_frgn_plot <- data.frame(
+    year = unique(country_i_eez_fishing$year),
+    producer_iso3c_name = "None",
+    live_weight_t = 0  
+  )
+}
+
+exploreARTIS::plot_ts(eez_frgn_plot,
+                      artis_var = "producer_iso3c_name",
+                      prop_flow_cutoff = 0.05,
+                      plot.type = "stacked",
+                      legend.title = "DWF country"
+                      ) +
+  scale_y_continuous(labels = scales::comma)
+  
+```
+
+```{r, 20-fig-line-eez-dwf, results='asis'}
+```
+
+```{r top-sp-eez-dwf, eval}
+
+top_6_sp_eez_frgn <- eez_frgn %>% 
+  group_by(sciname, common_name) %>% 
+  # total live_weight
+  summarise(live_weight_t = mean(live_weight_t),
+            .groups = "drop") %>% 
+  arrange(desc(live_weight_t)) %>% 
+  slice_head(n = 6)
+
+```
+
+```{r fig-bar-sp-eez-dwf, eval= nrow(eez_frgn) > 0, fig.cap=paste0("Top species caught in ", country_name, "  waters caught via DWF by foreign countries. Sum of the most recent years of data available (", paste(unique(eez_frgn$year), collapse = ", "), ").")}
+exploreARTIS::plot_bar(data = top_6_sp_eez_frgn,
+                               bar_group = "common_name",
+                               x.lab = "Quantity (tons live weight)") +
+  scale_x_continuous(labels = scales::comma) +
+  # Add quantity labels for values below the threshold (outside of bar)
+  geom_shadowtext(
+    data = subset(top_6_sp_eez_frgn, 
+                  live_weight_t < max(top_6_sp_eez_frgn$live_weight_t) * 0.8), 
+    aes(x = live_weight_t, y = common_name, 
+        label = scales::comma(round(live_weight_t))),
+    hjust = 0,
+    nudge_x = 0.025 * max(top_6_sp_eez_frgn$live_weight_t), # Dynamic nudge value
+    colour = "#114F59", # default RGB color from plot_bar
+    bg.colour = "white",
+    bg.r = 0.2,
+    size = 3
+  ) +
+  # Add quantity labels for values above the threshold (inside bar)
+  geom_text(
+    data = subset(top_6_sp_eez_frgn, 
+                  live_weight_t >= max(top_6_sp_eez_frgn$live_weight_t) * 0.8),
+    aes(x = live_weight_t, y = common_name, 
+        label = scales::comma(round(live_weight_t))),
+    hjust = 1,
+    nudge_x = -0.02 * max(top_6_sp_eez_frgn$live_weight_t), # Adjust the nudge value
+    colour = "white",
+    size = 3
+  )
+```
+
+```{r ,eval= nrow(eez_frgn) == 0, results='asis'}
+cat(paste0("There is no recorded DWF occuring in ", country_name, " EEZ waters by other countries."))
+```
+
+```{r, 21-fig-bar-sp-eez-dwf, results='asis'}
+```
