@@ -443,7 +443,7 @@ dwf_frgn_sankey <- dwf_frgn %>%
 )
 ```
 
-```{r figs-sankeys-dwf-species, eval=TRUE, echo=FALSE, results='hide', fig.keep='all', fig.pos='h', fig.cap=paste0(top_6_sp_dwf$common_name, ": caught via DWF by ", country_name, " (source EEZ --> producer --> consumer)")}
+```{r figs-sankeys-dwf-species, results='hide', fig.keep='all', fig.cap=paste0(top_6_sp_dwf$common_name, ": caught via DWF by ", country_name, " (source EEZ --> producer --> consumer)")}
 # fig.cap = c('first plot', 'second plot') # will provide unique captions to plots
 dwf_frgn_consum_sankey <- dwf_frgn_consum %>% 
   exploreARTIS::add_country_name("producer_iso3c") %>% 
@@ -482,26 +482,11 @@ purrr::map(top_6_sp_dwf$common_name,
 ```{r, 10-fig-sankey-dwf, results='asis'}
 ```
 
-
-```{r fig-stacked-consum-dwf,eval=TRUE, fig.cap=paste0("Consuming country of aquatic food caught via distant water fishing  by ", country_name, " in the most recent years of data (", paste(unique(dwf_frgn$year), collapse = ", "), ") and not including NAs")}
-
-plot_ts(dwf_frgn,
-        artis_var = "consumer_iso3c",
-        prop_flow_cutoff = 0.05,
-        plot.type = "stacked",
-        legend.title = "Consumer") +
-  scale_y_continuous(labels = scales::comma)
-```
-
-```{r, 4-fig-stacked-consum-dwf, results='asis'}
-```
-
-
 ## 3) Consumption of DWF by `r country_name`
 
-```{r fig-consump, eval=TRUE, out.width="100%", fig.width=8.57,fig.cap= paste0(country_name, " consumption of catch from its own waters. Domestic production referes to catch ", country_name, "produces and Foreign fleet production is a foreign country's catch in ", country_name, " water. Note y-axes may not be same scale.")}
+```{r fig-consump, eval=TRUE, out.width="100%", fig.width=8.57,fig.cap= paste0(country_name, " consumption of catch from its own waters. Domestic production referes to catch ", country_name, "produces and Foreign fleet production is a foreign country's catch in ", country_name, " water. Note y-axes may not be same scale and years in data may not be consistent.")}
 
-# consum_dom is  Focal country consumption of catch in its own waters
+# consum_dom is Focal country consumption of catch in its own waters
 # could be domestic catch or catch by a different nation
 
 consum_dom_dom_plot <- consum_dom %>%
@@ -543,7 +528,7 @@ plot2 <- plot_ts(consum_dom_frgn_plot,
                  plot.title = "Foreign fleet production"
                  )
 # combine plot side-by-side
-cowplot::plot_grid(plot1, plot2)
+cowplot::plot_grid(plot1, plot2, ncol = 1)
 ```
 
 ```{r, 11-fig-consump, results='asis'}
@@ -689,4 +674,18 @@ results[6]
 ```
 
 ```{r 19-fig-sankey-consump, results='asis'}
+```
+
+
+```{r fig-stacked-consum-dwf,eval=TRUE, fig.cap=paste0("Consuming country of aquatic food caught via distant water fishing  by ", country_name, " in the most recent years of data (", paste(unique(dwf_frgn$year), collapse = ", "), ") and not including NAs")}
+
+plot_ts(dwf_frgn,
+        artis_var = "consumer_iso3c",
+        prop_flow_cutoff = 0.05,
+        plot.type = "stacked",
+        legend.title = "Consumer") +
+  scale_y_continuous(labels = scales::comma)
+```
+
+```{r, 4-fig-stacked-consum-dwf, results='asis'}
 ```
