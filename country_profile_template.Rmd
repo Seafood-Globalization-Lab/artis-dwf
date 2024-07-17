@@ -52,6 +52,7 @@ library(cowplot) # arange plots together
 #                force = TRUE)
 library(exploreARTIS) # custom ARTIS viz package 
 library(shadowtext) # custom labeling on horizontal bar figures
+library(egg) # arrange plots
 
 # pull parameters into objects
 country_iso3c <- params$countries_i
@@ -484,8 +485,9 @@ purrr::map(top_6_sp_dwf$common_name,
 
 ## 3) Consumption of DWF by `r country_name`
 
-```{r fig-consump, eval=TRUE, out.width="100%", fig.width=8.57,fig.cap= paste0(country_name, " consumption of catch from its own waters. Domestic production referes to catch ", country_name, "produces and Foreign fleet production is a foreign country's catch in ", country_name, " water. Note y-axes may not be same scale and years in data may not be consistent.")}
+```{r fig-consump, fig.cap= paste0(country_name, " consumption of catch from its own waters. Domestic production referes to catch ", country_name, "produces and Foreign fleet production is a foreign country's catch in ", country_name, " water. Note y-axes may not be same scale and years in data may not be consistent.")}
 
+# out.width="100%", fig.width=8.57,
 # consum_dom is Focal country consumption of catch in its own waters
 # could be domestic catch or catch by a different nation
 
@@ -527,8 +529,8 @@ plot2 <- plot_ts(consum_dom_frgn_plot,
                  plot.type = "stacked",
                  plot.title = "Foreign fleet production"
                  )
-# combine plot side-by-side
-cowplot::plot_grid(plot1, plot2, ncol = 1)
+
+egg::ggarrange(plot1, plot2, ncol = 1)
 ```
 
 ```{r, 11-fig-consump, results='asis'}
