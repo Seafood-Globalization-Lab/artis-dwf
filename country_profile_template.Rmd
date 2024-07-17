@@ -286,7 +286,7 @@ cat(paste0("There is no recorded DWF occuring in ", country_name, " EEZ waters b
 ```{r, 21-fig-bar-sp-eez-dwf, results='asis'}
 ```
 
-```{r fig-sankey-eez-all, fig.cap= paste0("Flows of all fishing activity occuring in ", country_name,"'s EEZ waters. Total for all years of available data (", paste(unique(country_i_eez_fishing$year), collapse = ", "),")")}
+```{r fig-sankey-eez-all, fig.cap= paste0("Flows of all fishing activity occuring in ", country_name,"'s EEZ waters. Total for all years of available data (", paste(unique(country_i_eez_fishing$year), collapse = ", "),").")}
 # New Figure --
 # Sankey of overall flow (4 columns) with species, EEZ, producer, consumer (or possibly drop species if the 4 columns make it too messy) – focal country will be EEZ in all cases here
 
@@ -299,14 +299,15 @@ eez_fishing_sankey <- country_i_eez_fishing %>%
                "common_name",
                "eez_name",
                "producer_iso3c_name",
-               "consumer_iso3c_name")) + 
-  theme(plot.title = element_text(size=14)) +
+               "consumer_iso3c_name"),
+             plot.title = "") + 
   scale_x_discrete(labels = c("Species", "EEZ", "Producer", "Consumer")) +
   theme(axis.text.x = element_text(size = 8))
 )
 ```
 
-```{r figs-sankeys-eez-frgn-species, results='hide', fig.keep='all', fig.cap=paste0(top_6_sp_dwf$common_name, ": caught via DWF in ", country_name, "'s EEZ waters. Total catch for all years of available data (", paste(unique(country_i_eez_fishing$year), collapse = ", "),")")}
+```{r figs-sankeys-eez-frgn-species, results='hide', fig.keep='all', fig.cap=paste0("Total DWF catch in ", country_name, "'s EEZ waters for ", top_6_sp_eez_frgn$common_name," across all years of available data (", paste(unique(country_i_eez_fishing$year), collapse = ", "),").")}
+
 # New Figure -- 
 # Sankey of flows (EEZ, producer, consumer) for top species
 
@@ -321,7 +322,7 @@ purrr::map(top_6_sp_eez_frgn$common_name,
                                   "producer_iso3c_name",
                                   "consumer_iso3c_name"),
                          plot.title = .x) + 
-             theme(plot.title = element_text(size=14)) +
+             theme(plot.title = element_text(size=12)) +
              scale_x_discrete(labels = c("EEZ", "Producer", "Consumer")) +
              theme(axis.text.x = element_text(size = 8))
            )
@@ -422,9 +423,24 @@ cat(paste0("There is no recorded DWF by ", country_name, " in other countries EE
 ```{r, 3-fig-bar-dwf-species, eval= nrow(dwf_frgn) > 0, results='asis'}
 ```
 
-```{r}
+```{r fig-sankey-dwf-all, fig.cap= paste0("All flows of ", country_name, "'s DWF activity. Total for all years of available data (", paste(unique(country_i_eez_fishing$year), collapse = ", "),").")}
 # New Figure --
 # Sankey of overall flow (4 columns) with species, EEZ, producer, consumer (or possibly drop species if the 4 columns make it too messy) – focal country will be producer in all cases here
+
+dwf_frgn_sankey <- dwf_frgn %>%
+  exploreARTIS::add_country_name("producer_iso3c") %>%
+  exploreARTIS::add_country_name("consumer_iso3c")
+
+(plot_sankey(dwf_frgn_sankey,
+             cols = c(
+               "common_name",
+               "eez_name",
+               "producer_iso3c_name",
+               "consumer_iso3c_name"),
+             plot.title = "") + 
+  scale_x_discrete(labels = c("Species", "EEZ", "Producer", "Consumer")) +
+  theme(axis.text.x = element_text(size = 8))
+)
 ```
 
 ```{r figs-sankeys-dwf-species, eval=TRUE, echo=FALSE, results='hide', fig.keep='all', fig.pos='h', fig.cap=paste0(top_6_sp_dwf$common_name, ": caught via DWF by ", country_name, " (source EEZ --> producer --> consumer)")}
@@ -442,7 +458,7 @@ purrr::map(top_6_sp_dwf$common_name,
                                   "producer_iso3c_name",
                                   "consumer_iso3c_name"),
                          plot.title = .x) + 
-             theme(plot.title = element_text(size=14)) +
+             theme(plot.title = element_text(size=12)) +
              scale_x_discrete(labels = c("EEZ", "producer", "consumer")) +
              theme(axis.text.x = element_text(size = 8))
            )
