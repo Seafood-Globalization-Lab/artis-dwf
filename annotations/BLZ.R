@@ -1,36 +1,50 @@
 ## ---- 1-fig-prct-dwf --------
 
-cat("This is the **annotation** for figure 1. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.")
+cat("This is the **annotation** for figure 1. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. ")
 
 
 ## ---- 2-fig-line-dwf-eez --------
 
-cat("Annotation **Figure 2**. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.")
+cat("Annotation **Figure 2**. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. ")
 
 
 ## ---- 3-fig-bar-dwf-species --------
 
-cat("Annotation **Figure 3**. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.")
+cat("Annotation **Figure 3**. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.")
 
 ## ---- 4-fig-stacked-consum-dwf -------
 
-cat("Annotation **Figure 4**. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.")
+cat("Annotation **Figure 4**. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.")
 
-## ---- 5-10-figs-dwf-species-sankeys -------
+## ---- 5-fig-sankey-dwf -------
+cat("Annotation **Figure 5**. This is a test. Test. Test.")
 
-cat("Annotations **Figures 5-10**. Not exactly sure how to insert annotations for each sankey figure. Possibly inside of `purrr::map()`")
+## ---- 6-fig-sankey-dwf -------
+cat("Annotation **Figure 6**. This is a test. Test. Test.")
+
+## ---- 7-fig-sankey-dwf -------
+cat("Annotation **Figure 7**. This is a test. Test. Test.")
+
+## ---- 8-fig-sankey-dwf -------
+cat("Annotation **Figure 8**. This is a test. Test. Test.")
+
+## ---- 9-fig-sankey-dwf -------
+cat("Annotation **Figure 9**. This is a test. Test. Test.")
+
+## ---- 10-fig-sankey-dwf -------
+cat("Annotation **Figure 10**. This is a test. Test. Test.")
 
 ## ---- 11-fig-consump -------
 
-cat("Annotation **Figure 11**. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.")
+cat("Annotation **Figure 11**. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.")
 
 ## ---- 12-fig-facet-consump -------
 
-cat("Annotation **Figure 12**. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.")
+cat("Annotation **Figure 12**. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.")
 
 ## ---- 13-fig-bar-top-sp-consump -------
 
-cat("Annotation **Figure 13**. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.")
+cat("Annotation **Figure 13**. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.")
 
 
 ## ---- 14-fig-sankey-consump -------
