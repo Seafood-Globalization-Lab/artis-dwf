@@ -94,8 +94,8 @@ message("running clean_data.R is complete")
 # Countries of interest ---------------------------------------------------
 
 # Vector of Oceana countries:
-#countries <- c("Belize", "Brazil", "Canada", "Chile", "Mexico", "Philippines", "Peru", "UK", "USA", "Spain", "Malaysia", "Ghana", "Senegal")
-countries <- c("Belize")
+countries <- c("Belize", "Brazil", "Canada", "Chile", "Mexico", "Philippines", "Peru", "UK", "USA", "Spain", "Malaysia", "Ghana", "Senegal")
+#countries <- c("Belize")
 #countries <- c("Malaysia", "Belize", "Brazil", "Canada")
 #countries <- "Malaysia"
 

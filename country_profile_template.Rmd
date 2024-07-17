@@ -45,10 +45,11 @@ knitr::opts_template$set(
 # Sankey consumption chunk option template named "consump_sankey_opts"
 knitr::opts_template$set(
   consump_sankey_opts = list(
-    echo=FALSE, 
-    results='hide', 
-    fig.keep='all', 
-    fig.cap=paste0(top_6_sp_consum$common_name, ": ", country_name, " consumption of distant water fishing products in the most recent available data (", paste(unique(consum_dwf$year), collapse = ", "), "). The flows represent the EEZ where the product was caught --> producer country (who caught the product) --> consumer country (who consumed the end product))")
+    echo = FALSE, 
+    cache = FALSE,
+    results = 'hide', 
+    fig.keep = 'all', 
+    fig.cap = paste0(top_6_sp_consum$common_name, ": ", country_name, " consumption of distant water fishing products in the most recent available data (", paste(unique(consum_dwf$year), collapse = ", "), "). The flows represent the EEZ where the product was caught --> producer country (who caught the product) --> consumer country (who consumed the end product))")
   )
 )
 
@@ -314,6 +315,24 @@ purrr::map(top_6_sp_dwf$common_name,
            )
 ```
 
+```{r, 5-fig-sankey-dwf, results='asis'}
+```
+
+```{r, 6-fig-sankey-dwf, results='asis'}
+```
+
+```{r, 7-fig-sankey-dwf, results='asis'}
+```
+
+```{r, 8-fig-sankey-dwf, results='asis'}
+```
+
+```{r, 9-fig-sankey-dwf, results='asis'}
+```
+
+```{r, 10-fig-sankey-dwf, results='asis'}
+```
+
 ## 3) Consumption of DWF by `r country_name`
 
 ```{r fig-consump,eval=TRUE, out.width="100%", fig.width=8.57,fig.cap= paste0(country_name, " consumption of catch from its own waters. Domestic production referes to catch ", country_name, "produces and Foreign fleet production is a foreign country's catch in ", country_name, " water. Note y-axes may not be same scale.")}
@@ -476,9 +495,9 @@ top_6_csv <- rbind(top_6_csv, na_rows_consum)
 write_csv(top_6_csv, file.path("output", "common_name_na.csv"))
 ```
 
-```{r figs-sankey-consump, opts.label='sankey_consump_opts'}
+```{r figs-sankey-consump, echo = FALSE, cache = FALSE, results = 'hide', fig.keep = 'all', fig.cap = paste0(top_6_sp_consum$common_name, ": ", country_name, " consumption of distant water fishing products in the most recent available data (", paste(unique(consum_dwf$year), collapse = ", "), "). The flows represent the EEZ where the product was caught --> producer country (who caught the product) --> consumer country (who consumed the end product))")}
 
-results <- purrr::map(top_6_sp_consum$common_name, 
+purrr::map(top_6_sp_consum$common_name, 
            ~ plot_sankey(consum_dwf %>% 
                            filter(.x == common_name),
                          cols = c("eez_name", 
@@ -496,42 +515,42 @@ results <- purrr::map(top_6_sp_consum$common_name,
 #                        ~ plot_sankey_annote(consum_dwf, .x, .y, country_iso3c))
 ```
 
-```{r ,opts.label='sankey_consump_opts'}
-print(results[1])
+```{r, eval= FALSE, opts.label='sankey_consump_opts'}
+results[1]
 ```
 
 ```{r 14-fig-sankey-consump, results='asis'}
 ```
 
-```{r, opts.label='sankey_consump_opts'}
+```{r, eval= FALSE, opts.label='sankey_consump_opts'}
 results[2]
 ```
 
 ```{r 15-fig-sankey-consump, results='asis'}
 ```
 
-```{r}
+```{r, eval= FALSE}
 results[3]
 ```
 
 ```{r 16-fig-sankey-consump, results='asis'}
 ```
 
-```{r}
+```{r, eval= FALSE}
 results[4]
 ```
 
 ```{r 17-fig-sankey-consump, results='asis'}
 ```
 
-```{r}
+```{r, eval= FALSE}
 results[5]
 ```
 
 ```{r 18-fig-sankey-consump, results='asis'}
 ```
 
-```{r}
+```{r, eval= FALSE}
 results[6]
 ```
 
