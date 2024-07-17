@@ -72,8 +72,10 @@ message("data import is complete")
 # Run Scripts -------------------------------------------------------------
 
 # load functions
-source(file.path(".", "scripts", "functions.R", 
-                 fsep = "/"))
+source(file.path(scrdir, "functions.R", fsep = "/"))
+source(file.path(scrdir, "fun_plot_sankey_annotate.R"))
+# get record of flags of convenience  
+source(file.path(scrdir, "scrape_foc.R", fsep = "/"))
 
 # FIXIT: pull consumption data from Heroku server database
 # source(file.path(".", "scripts", "load_db_data.R"))
@@ -92,8 +94,8 @@ message("running clean_data.R is complete")
 # Countries of interest ---------------------------------------------------
 
 # Vector of Oceana countries:
-countries <- c("Belize", "Brazil", "Canada", "Chile", "Mexico", "Philippines", "Peru", "UK", "USA", "Spain", "Malaysia", "Ghana", "Senegal")
-#countries <- c("Belize")
+#countries <- c("Belize", "Brazil", "Canada", "Chile", "Mexico", "Philippines", "Peru", "UK", "USA", "Spain", "Malaysia", "Ghana", "Senegal")
+countries <- c("Belize")
 #countries <- c("Malaysia", "Belize", "Brazil", "Canada")
 #countries <- "Malaysia"
 
@@ -103,7 +105,6 @@ countries_std <- countrycode(countries,
                               destination = "iso3c")
 # for testing only
 #countries_i <- countries_std
-  
 
 # Filter last 5 years of data ----------------------------
 max_year <- max(consumption_eez$year)
@@ -116,6 +117,7 @@ consumption_eez_2 <- consumption_eez %>%
          eez_iso3c = catch_artis_iso3,
          eez_name = catch_artis_country_name)
 
+# Troubleshoot common name NAs ----------------------------
 # create empty csv for recording common name NAs recorded in the Rmd
 #file.create(file.path(outdir, "common_name_na.csv"))
 
@@ -124,6 +126,9 @@ consumption_eez_2 <- consumption_eez %>%
 # Loop through focal countries - Build reports for each
 for (i in 1:length(countries_std)) {
   countries_i <- countries_std[i]
+  
+  # is country flag of convience
+  foc_logic <- countries_i %in% itf_foc_std$country_iso3c
 
   message(glue::glue("started filtering {countries_i} data"))
   
@@ -149,7 +154,8 @@ for (i in 1:length(countries_std)) {
     params = list(countries_i = countries_i,
                   country_i_dwf = country_i_dwf,
                   country_i_consump = country_i_consump,
-                  country_i_eez_fishing = country_i_eez_fishing), 
+                  country_i_eez_fishing = country_i_eez_fishing,
+                  foc_logic = foc_logic), 
     output_dir = outdir,
     output_file = paste("dwf", countries_i, "profile.pdf", sep = "_")
   )
