@@ -114,7 +114,6 @@ There are three aspects of distant water fishing investigated in this report:
 cat(paste0("**Please note**: ", country_name, " been declared a flag of convience (FOC) by the International Transport Workers Federation's (ITF) Fair Practices Committee (a joint committee of ITF seafarers' and dockers' unions), which runs the ITF campaign against FOCs as of ", format(Sys.Date(), '%B %d, %Y'), ". This status may affect the following results, including by increasing apparent consumption of aquatic foods."))
 ```
 
-
 ```{r create-dataframes}
 # pull out parameters to Rmd environment - contains dwf = foreign and domestic
 country_i_dwf <- params$country_i_dwf
@@ -127,6 +126,14 @@ dwf_frgn <- country_i_dwf %>%
   # domestic reference
 dwf_dom <- country_i_dwf %>% 
   filter(dwf != "foreign")
+  # top 6 species caught via dwf
+top_6_sp_dwf <- dwf_frgn %>% 
+  group_by(sciname, common_name) %>% 
+  # total live weight (tons)
+  summarise(live_weight_t = sum(live_weight_t),
+            .groups = "drop") %>% 
+  arrange(desc(live_weight_t)) %>% 
+  slice_head(n = 6)
 
 # 2) Focal country's consumption 
   # a) fish caught in its own waters (regardless of who is fishing)
@@ -141,6 +148,18 @@ consum_frgn <- country_i_consump %>%
   # c) country's consumption of DWF fish
 consum_dwf <- country_i_consump %>% 
   filter(dwf == "foreign")
+  # add country names
+consum_dwf <- consum_dwf %>% 
+  exploreARTIS::add_country_name("producer_iso3c") %>% 
+  exploreARTIS::add_country_name("consumer_iso3c")
+  # top 6 species consumed 
+top_6_sp_consum <- consum_dwf %>% 
+  group_by(sciname, common_name) %>% 
+  # total live_weight
+  summarise(live_weight_t = mean(live_weight_t),
+            .groups = "drop") %>% 
+  arrange(desc(live_weight_t)) %>% 
+  slice_head(n = 6)
     
 # 3) Fishing activity in focal country EEZ by other countries
 eez_frgn <- country_i_eez_fishing %>% 
@@ -148,9 +167,110 @@ eez_frgn <- country_i_eez_fishing %>%
   # domestic reference - same as dwf_dom
 eez_dom <- country_i_eez_fishing %>% 
   filter(dwf != "foreign")
+  # top species 
+top_6_sp_eez_frgn <- eez_frgn %>% 
+  group_by(sciname, common_name) %>% 
+  # total live_weight
+  summarise(live_weight_t = mean(live_weight_t),
+            .groups = "drop") %>% 
+  arrange(desc(live_weight_t)) %>% 
+  slice_head(n = 6)
+```
+
+```{r find-NA-values, eval = FALSE}
+# -- For report development only --
+# Record missing common_name values for correction in run-analysis-report.R
+# add manual correction in the creation of `sciname_common` object.
+
+# DWF species
+top_6_csv <- read_csv(file.path("output", "common_name_na.csv"))
+
+na_rows_dwf <- top_6_sp_dwf %>% 
+  filter(is.na(common_name))
+
+top_6_csv <- rbind(top_6_csv, na_rows_dwf)
+
+# Consumption species
+na_rows_consum <- top_6_sp_consum %>% 
+  filter(is.na(common_name))
+
+top_6_csv <- rbind(top_6_csv, na_rows_consum)
+write_csv(top_6_csv, file.path("output", "common_name_na.csv"))
 ```
 
 # Results
+
+## 4) DWF in `r country_name` EEZ waters by other countries
+
+```{r fig-line-eez-dwf, fig.cap=paste0("The quantity of distant water fishing caught in ", country_name, " EEZ waters by forign countries")}
+
+eez_frgn_plot <- eez_frgn %>% 
+  exploreARTIS::add_country_name("producer_iso3c") %>% 
+  exploreARTIS::add_country_name("consumer_iso3c")
+
+# Check if the dataframe is empty
+if (nrow(eez_frgn_plot) == 0) {
+  # Create a new dataframe with the necessary structure and zero values
+  eez_frgn_plot <- data.frame(
+    year = unique(country_i_eez_fishing$year),
+    producer_iso3c_name = "None",
+    live_weight_t = 0  
+  )
+}
+
+exploreARTIS::plot_ts(eez_frgn_plot,
+                      artis_var = "producer_iso3c_name",
+                      prop_flow_cutoff = 0.05,
+                      plot.type = "stacked",
+                      legend.title = "DWF country"
+                      ) +
+  scale_y_continuous(labels = scales::comma)
+  
+```
+
+```{r, 20-fig-line-eez-dwf, results='asis'}
+```
+
+```{r fig-bar-sp-eez-dwf, eval= nrow(eez_frgn) > 0, fig.cap=paste0("Top species caught in ", country_name, "  waters caught via DWF by foreign countries. Sum of the most recent years of data available (", paste(unique(eez_frgn$year), collapse = ", "), ").")}
+# Only displays if data is available
+
+exploreARTIS::plot_bar(data = top_6_sp_eez_frgn,
+                               bar_group = "common_name",
+                               x.lab = "Quantity (tons live weight)") +
+  scale_x_continuous(labels = scales::comma) +
+  # Add quantity labels for values below the threshold (outside of bar)
+  geom_shadowtext(
+    data = subset(top_6_sp_eez_frgn, 
+                  live_weight_t < max(top_6_sp_eez_frgn$live_weight_t) * 0.8), 
+    aes(x = live_weight_t, y = common_name, 
+        label = scales::comma(round(live_weight_t))),
+    hjust = 0,
+    nudge_x = 0.025 * max(top_6_sp_eez_frgn$live_weight_t), # Dynamic nudge value
+    colour = "#114F59", # default RGB color from plot_bar
+    bg.colour = "white",
+    bg.r = 0.2,
+    size = 3
+  ) +
+  # Add quantity labels for values above the threshold (inside bar)
+  geom_text(
+    data = subset(top_6_sp_eez_frgn, 
+                  live_weight_t >= max(top_6_sp_eez_frgn$live_weight_t) * 0.8),
+    aes(x = live_weight_t, y = common_name, 
+        label = scales::comma(round(live_weight_t))),
+    hjust = 1,
+    nudge_x = -0.02 * max(top_6_sp_eez_frgn$live_weight_t), # Adjust the nudge value
+    colour = "white",
+    size = 3
+  )
+```
+
+```{r ,eval= nrow(eez_frgn) == 0, results='asis'}
+# markdown text only appears if no data
+cat(paste0("There is no recorded DWF occuring in ", country_name, " EEZ waters by other countries."))
+```
+
+```{r, 21-fig-bar-sp-eez-dwf, results='asis'}
+```
 
 ## 1) DWF Activities by `r country_name`
 
@@ -208,16 +328,6 @@ exploreARTIS::plot_ts(dwf_frgn,
 
 **Note**: Data is filtered to the last 5 years of available data.
 
-```{r}
-top_6_sp_dwf <- dwf_frgn %>% 
-  group_by(sciname, common_name) %>% 
-  # total live weight (tons)
-  summarise(live_weight_t = sum(live_weight_t),
-            .groups = "drop") %>% 
-  arrange(desc(live_weight_t)) %>% 
-  slice_head(n = 6)
-```
-
 ```{r fig-bar-dwf-species, eval= nrow(dwf_frgn) > 0, fig.cap=paste0("Top species caught via distant water fishing by tons of live weight. Sum for the last 5 years of available data (", paste(unique(dwf_frgn$year), collapse = ", "), ")")}
 
 exploreARTIS::plot_bar(data = top_6_sp_dwf,
@@ -269,17 +379,6 @@ plot_ts(dwf_frgn,
   scale_y_continuous(labels = scales::comma)
 ```
 
-
-```{r save-top-6-sp-dwf, eval = FALSE}
-# Record missing common_name values for correction
-top_6_csv <- read_csv(file.path("output", "common_name_na.csv"))
-
-na_rows_dwf <- top_6_sp_dwf %>% 
-  filter(is.na(common_name))
-
-top_6_csv <- rbind(top_6_csv, na_rows_dwf)
-```
-
 ```{r, 4-fig-stacked-consum-dwf, results='asis'}
 ```
 
@@ -289,7 +388,7 @@ dwf_frgn_consum_sankey <- dwf_frgn_consum %>%
   exploreARTIS::add_country_name("producer_iso3c") %>% 
   exploreARTIS::add_country_name("consumer_iso3c")
 
-glimpse(dwf_frgn_consum_sankey)
+#glimpse(dwf_frgn_consum_sankey)
 
 purrr::map(top_6_sp_dwf$common_name, 
            ~ plot_sankey(dwf_frgn_consum_sankey %>% 
@@ -410,23 +509,6 @@ consum_frgn_facet <- consum_frgn %>%
 ```{r, 12-fig-facet-consump, results='asis'}
 ```
 
-```{r top-sp-consumed, eval=TRUE}
-
-# add country names
-consum_dwf <- consum_dwf %>% 
-  exploreARTIS::add_country_name("producer_iso3c") %>% 
-  exploreARTIS::add_country_name("consumer_iso3c")
-
-top_6_sp_consum <- consum_dwf %>% 
-  group_by(sciname, common_name) %>% 
-  # total live_weight
-  summarise(live_weight_t = mean(live_weight_t),
-            .groups = "drop") %>% 
-  arrange(desc(live_weight_t)) %>% 
-  slice_head(n = 6)
-
-```
-
 **Note**: Data is filtered to the last 5 years of available data
 
 ```{r, fig-bar-top-sp-consump, eval=TRUE, fig.cap=paste0("Top species consumed by ", country_name, " caught via distant water fishing by ", country_name, " and other countries. Sum of the most recent years of data available (", paste(unique(consum_dwf$year), collapse = ", "), ").")}
@@ -464,24 +546,6 @@ exploreARTIS::plot_bar(data = top_6_sp_consum,
 ```
 
 ```{r, 13-fig-bar-top-sp-consump, results='asis'}
-```
-
-```{r save-top-6-sp-consum, eval=FALSE}
-top_6_sp_consum <- consum_dwf %>% 
-  group_by(sciname, common_name) %>% 
-  summarise(total_live_weight_t = mean(live_weight_t),
-            .groups = "drop") %>% 
-  arrange(desc(total_live_weight_t)) %>% 
-  slice_head(n = 6)
-
-# record missing common name NAs for correction in run-analysis-report.R
-top_6_csv <- read_csv(file.path("output", "common_name_na.csv"))
-
-na_rows_consum <- top_6_sp_consum %>% 
-  filter(is.na(common_name))
-
-top_6_csv <- rbind(top_6_csv, na_rows_consum)
-write_csv(top_6_csv, file.path("output", "common_name_na.csv"))
 ```
 
 ```{r figs-sankey-consump, echo = FALSE, cache = FALSE, results = 'hide', fig.keep = 'all', fig.cap = paste0(top_6_sp_consum$common_name, ": ", country_name, " consumption of distant water fishing products in the most recent available data (", paste(unique(consum_dwf$year), collapse = ", "), "). The flows represent the EEZ where the product was caught --> producer country (who caught the product) --> consumer country (who consumed the end product))")}
@@ -544,85 +608,4 @@ results[6]
 ```
 
 ```{r 19-fig-sankey-consump, results='asis'}
-```
-
-## 4) DWF in `r country_name` EEZ waters by other countries
-
-```{r fig-line-eez-dwf, fig.cap=paste0("The quantity of distant water fishing caught in ", country_name, " EEZ waters by forign countries")}
-
-eez_frgn_plot <- eez_frgn %>% 
-  exploreARTIS::add_country_name("producer_iso3c") %>% 
-  exploreARTIS::add_country_name("consumer_iso3c")
-
-# Check if the dataframe is empty
-if (nrow(eez_frgn_plot) == 0) {
-  # Create a new dataframe with the necessary structure and zero values
-  eez_frgn_plot <- data.frame(
-    year = unique(country_i_eez_fishing$year),
-    producer_iso3c_name = "None",
-    live_weight_t = 0  
-  )
-}
-
-exploreARTIS::plot_ts(eez_frgn_plot,
-                      artis_var = "producer_iso3c_name",
-                      prop_flow_cutoff = 0.05,
-                      plot.type = "stacked",
-                      legend.title = "DWF country"
-                      ) +
-  scale_y_continuous(labels = scales::comma)
-  
-```
-
-```{r, 20-fig-line-eez-dwf, results='asis'}
-```
-
-```{r top-sp-eez-dwf}
-
-top_6_sp_eez_frgn <- eez_frgn %>% 
-  group_by(sciname, common_name) %>% 
-  # total live_weight
-  summarise(live_weight_t = mean(live_weight_t),
-            .groups = "drop") %>% 
-  arrange(desc(live_weight_t)) %>% 
-  slice_head(n = 6)
-
-```
-
-```{r fig-bar-sp-eez-dwf, eval= nrow(eez_frgn) > 0, fig.cap=paste0("Top species caught in ", country_name, "  waters caught via DWF by foreign countries. Sum of the most recent years of data available (", paste(unique(eez_frgn$year), collapse = ", "), ").")}
-exploreARTIS::plot_bar(data = top_6_sp_eez_frgn,
-                               bar_group = "common_name",
-                               x.lab = "Quantity (tons live weight)") +
-  scale_x_continuous(labels = scales::comma) +
-  # Add quantity labels for values below the threshold (outside of bar)
-  geom_shadowtext(
-    data = subset(top_6_sp_eez_frgn, 
-                  live_weight_t < max(top_6_sp_eez_frgn$live_weight_t) * 0.8), 
-    aes(x = live_weight_t, y = common_name, 
-        label = scales::comma(round(live_weight_t))),
-    hjust = 0,
-    nudge_x = 0.025 * max(top_6_sp_eez_frgn$live_weight_t), # Dynamic nudge value
-    colour = "#114F59", # default RGB color from plot_bar
-    bg.colour = "white",
-    bg.r = 0.2,
-    size = 3
-  ) +
-  # Add quantity labels for values above the threshold (inside bar)
-  geom_text(
-    data = subset(top_6_sp_eez_frgn, 
-                  live_weight_t >= max(top_6_sp_eez_frgn$live_weight_t) * 0.8),
-    aes(x = live_weight_t, y = common_name, 
-        label = scales::comma(round(live_weight_t))),
-    hjust = 1,
-    nudge_x = -0.02 * max(top_6_sp_eez_frgn$live_weight_t), # Adjust the nudge value
-    colour = "white",
-    size = 3
-  )
-```
-
-```{r ,eval= nrow(eez_frgn) == 0, results='asis'}
-cat(paste0("There is no recorded DWF occuring in ", country_name, " EEZ waters by other countries."))
-```
-
-```{r, 21-fig-bar-sp-eez-dwf, results='asis'}
 ```
