@@ -53,9 +53,11 @@ library(cowplot) # arange plots together
 library(exploreARTIS) # custom ARTIS viz package 
 library(shadowtext) # custom labeling on horizontal bar figures
 
-# load parameter into object
+# pull parameters into objects
 country_iso3c <- params$countries_i
-
+country_i_dwf <- params$country_i_dwf
+country_i_consump <- params$country_i_consump
+country_i_eez_fishing <- params$country_i_eez_fishing
 foc_logic <- params$foc_logic
 
 # iso3c to country name
@@ -95,11 +97,6 @@ cat(paste0("**Please note**: ", country_name, " been declared a flag of convienc
 ```
 
 ```{r create-dataframes}
-# pull out parameters to Rmd environment - contains dwf = foreign and domestic
-country_i_dwf <- params$country_i_dwf
-country_i_consump <- params$country_i_consump
-country_i_eez_fishing <- params$country_i_eez_fishing
-
 # 1) focal country DWF activities
 dwf_frgn <- country_i_dwf %>% 
   filter(dwf == "foreign")
@@ -182,9 +179,41 @@ write_csv(top_6_csv, file.path("output", "common_name_na.csv"))
 
 ## 1) DWF in `r country_name`'s EEZ by other countries
 
-```{r}
+```{r fig-prct-eez-frgn ,fig.cap= glue::glue("Percent of {country_name} total catch that is distant water fishing for most recent available data.")}
 # new figure --
 # Time series of percent of catch in Mexico’s EEZ that is caught by foreign nations, possibly as a panel with Fig 20 (fig-line-eez-dwf) below.  
+
+# calc total catch
+eez_total_yr <- country_i_eez_fishing %>% 
+  group_by(year) %>% 
+  summarise(total_catch = sum(live_weight_t))
+
+# calc total foreign eez catch & join to total catch
+catch_eez_yr <- eez_frgn %>% 
+  group_by(year) %>% 
+  summarize(eez_frgn_catch = sum(live_weight_t)) %>% 
+  left_join(eez_total_yr, by = "year") %>% 
+  mutate(prct_eez_frgn = eez_frgn_catch/total_catch)
+
+# Check if the dataframe is empty
+if (nrow(eez_total_yr) == 0) {
+  # Create a new dataframe with the necessary structure and zero values
+  eez_total_yr <- data.frame(
+    year = unique(country_i_eez_fishing$year),
+    prct_dwf = 0
+  )
+}
+
+# Line time series percent of total catch in foreign waters
+(fig_eez_prct <- catch_eez_yr %>% 
+  ggplot(aes(year,prct_eez_frgn)) +
+    geom_line() +
+    theme_bw() +
+    labs(y = "Percent Catch in Foreign Waters",
+         x = "") +
+    scale_y_continuous(labels = scales::percent_format(accuracy = 1), 
+                       limits = c(0,1))
+)
 ```
 
 ```{r fig-line-eez-dwf, fig.cap=paste0("The quantity of distant water fishing caught in ", country_name, " EEZ waters by forign countries")}
@@ -257,11 +286,46 @@ cat(paste0("There is no recorded DWF occuring in ", country_name, " EEZ waters b
 ```{r, 21-fig-bar-sp-eez-dwf, results='asis'}
 ```
 
-```{r}
+```{r fig-sankey-eez-all, fig.cap= paste0("Flows of all fishing activity occuring in ", country_name,"'s EEZ waters. Total for all years of available data (", paste(unique(country_i_eez_fishing$year), collapse = ", "),")")}
 # New Figure --
 # Sankey of overall flow (4 columns) with species, EEZ, producer, consumer (or possibly drop species if the 4 columns make it too messy) – focal country will be EEZ in all cases here
+
+eez_fishing_sankey <- country_i_eez_fishing %>%
+  exploreARTIS::add_country_name("producer_iso3c") %>%
+  exploreARTIS::add_country_name("consumer_iso3c")
+
+(plot_sankey(eez_fishing_sankey,
+             cols = c(
+               "common_name",
+               "eez_name",
+               "producer_iso3c_name",
+               "consumer_iso3c_name")) + 
+  theme(plot.title = element_text(size=14)) +
+  scale_x_discrete(labels = c("Species", "EEZ", "Producer", "Consumer")) +
+  theme(axis.text.x = element_text(size = 8))
+)
 ```
 
+```{r figs-sankeys-eez-frgn-species, results='hide', fig.keep='all', fig.cap=paste0(top_6_sp_dwf$common_name, ": caught via DWF in ", country_name, "'s EEZ waters. Total catch for all years of available data (", paste(unique(country_i_eez_fishing$year), collapse = ", "),")")}
+# New Figure -- 
+# Sankey of flows (EEZ, producer, consumer) for top species
+
+eez_frgn_sankey <- eez_frgn %>%
+  exploreARTIS::add_country_name("producer_iso3c") %>%
+  exploreARTIS::add_country_name("consumer_iso3c")
+
+purrr::map(top_6_sp_eez_frgn$common_name, 
+           ~ plot_sankey(eez_frgn_sankey %>% 
+                           filter(.x == common_name),
+                         cols = c("eez_name", 
+                                  "producer_iso3c_name",
+                                  "consumer_iso3c_name"),
+                         plot.title = .x) + 
+             theme(plot.title = element_text(size=14)) +
+             scale_x_discrete(labels = c("EEZ", "Producer", "Consumer")) +
+             theme(axis.text.x = element_text(size = 8))
+           )
+```
 
 ## 2) `r country_name` DWF Activities 
 
@@ -363,7 +427,7 @@ cat(paste0("There is no recorded DWF by ", country_name, " in other countries EE
 # Sankey of overall flow (4 columns) with species, EEZ, producer, consumer (or possibly drop species if the 4 columns make it too messy) – focal country will be producer in all cases here
 ```
 
-```{r figs-dwf-species-sankeys,eval=TRUE, echo=FALSE, results='hide', fig.keep='all', fig.pos='h', fig.cap=paste0(top_6_sp_dwf$common_name, ": caught via DWF by ", country_name, " (source EEZ --> producer --> consumer)")}
+```{r figs-sankeys-dwf-species, eval=TRUE, echo=FALSE, results='hide', fig.keep='all', fig.pos='h', fig.cap=paste0(top_6_sp_dwf$common_name, ": caught via DWF by ", country_name, " (source EEZ --> producer --> consumer)")}
 # fig.cap = c('first plot', 'second plot') # will provide unique captions to plots
 dwf_frgn_consum_sankey <- dwf_frgn_consum %>% 
   exploreARTIS::add_country_name("producer_iso3c") %>% 
