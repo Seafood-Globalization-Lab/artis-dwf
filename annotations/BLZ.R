@@ -16,10 +16,6 @@ cat("Annotation **Figure 3**. Lorem ipsum dolor sit amet, consectetur adipiscing
 
 cat("Annotation **Figure 4**. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.")
 
-## ---- 1-table-dwf-species -------
-
-cat("Annotation **Table 1**")
-
 ## ---- 5-10-figs-dwf-species-sankeys -------
 
 cat("Annotations **Figures 5-10**. Not exactly sure how to insert annotations for each sankey figure. Possibly inside of `purrr::map()`")
@@ -36,10 +32,22 @@ cat("Annotation **Figure 12**. Lorem ipsum dolor sit amet, consectetur adipiscin
 
 cat("Annotation **Figure 13**. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.")
 
-## ---- 2-table-top-sp-consumed -------
 
-cat("**Table 2** annotations. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.")
+## ---- 14-fig-sankey-consump -------
+cat("Annotation **Figure 14**. This is a test. Test. Test.")
 
-## ---- 14-19-figs-sankey-consump -------
+## ---- 15-fig-sankey-consump -------
+cat("Annotation **Figure 15**. Another test.")
 
-cat("Annotation **Figure 14-19**. Not exactly sure how to insert annotations for each sankey figure. Possibly inside of `purrr::map()` OR generate & save figures in folder and `knitr::include_graphics()` to place figures back into Rmd")
+## ---- 16-fig-sankey-consump -------
+cat("Annotation **Figure 16**. Yet another test.")
+
+## ---- 17-fig-sankey-consump -------
+cat("Annotation **Figure 17**. Test again.")
+
+## ---- 18-fig-sankey-consump -------
+cat("Annotation **Figure 18**. Keep testing.")
+
+## ---- 19-fig-sankey-consump -------
+cat("Annotation **Figure 19**. Final test.")
+
