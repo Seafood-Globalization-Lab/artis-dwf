@@ -33,26 +33,6 @@ knitr::opts_chunk$set(echo = FALSE,
                       eval.after = "fig.cap", # eval code first then options
                       cache = TRUE)
 
-# Sankey DWF chunk option template named "dwf_sankey_opts"
-knitr::opts_template$set(
-  dwf_sankey_opts = list(
-    echo = FALSE,
-    warning = FALSE,
-    message = FALSE
-  )
-)
-
-# Sankey consumption chunk option template named "consump_sankey_opts"
-knitr::opts_template$set(
-  consump_sankey_opts = list(
-    echo = FALSE, 
-    cache = FALSE,
-    results = 'hide', 
-    fig.keep = 'all', 
-    fig.cap = paste0(top_6_sp_consum$common_name, ": ", country_name, " consumption of distant water fishing products in the most recent available data (", paste(unique(consum_dwf$year), collapse = ", "), "). The flows represent the EEZ where the product was caught --> producer country (who caught the product) --> consumer country (who consumed the end product))")
-  )
-)
-
 # load packages
 library(rmarkdown)
 library(knitr) # Need package version 1.44 or up for quarto
@@ -106,9 +86,9 @@ This report provides an analysis of distant water fishing (DWF) related to `r co
 
 There are three aspects of distant water fishing investigated in this report:
 
-1) The focal country's own DWF activities
-2) The focal country's consumption of aquatic foods sourced via DWF (conducted by them or another country)
-3) DWF activities by other nations within the focal country's EEZ
+1) DWF activities by other nations within the focal country's EEZ
+2) The focal country's own DWF activities
+3) The focal country's consumption of aquatic foods sourced via DWF (conducted by them or another country)
 
 ```{r, eval = foc_logic == TRUE, results='asis'}
 cat(paste0("**Please note**: ", country_name, " been declared a flag of convience (FOC) by the International Transport Workers Federation's (ITF) Fair Practices Committee (a joint committee of ITF seafarers' and dockers' unions), which runs the ITF campaign against FOCs as of ", format(Sys.Date(), '%B %d, %Y'), ". This status may affect the following results, including by increasing apparent consumption of aquatic foods."))
@@ -200,7 +180,12 @@ write_csv(top_6_csv, file.path("output", "common_name_na.csv"))
 
 # Results
 
-## 4) DWF in `r country_name` EEZ waters by other countries
+## 1) DWF in `r country_name`'s EEZ by other countries
+
+```{r}
+# new figure --
+# Time series of percent of catch in Mexico’s EEZ that is caught by foreign nations, possibly as a panel with Fig 20 (fig-line-eez-dwf) below.  
+```
 
 ```{r fig-line-eez-dwf, fig.cap=paste0("The quantity of distant water fishing caught in ", country_name, " EEZ waters by forign countries")}
 
@@ -272,9 +257,15 @@ cat(paste0("There is no recorded DWF occuring in ", country_name, " EEZ waters b
 ```{r, 21-fig-bar-sp-eez-dwf, results='asis'}
 ```
 
-## 1) DWF Activities by `r country_name`
+```{r}
+# New Figure --
+# Sankey of overall flow (4 columns) with species, EEZ, producer, consumer (or possibly drop species if the 4 columns make it too messy) – focal country will be EEZ in all cases here
+```
 
-```{r eval= TRUE, fig-prct-dwf, fig.cap= paste0("Percent of ", country_name, " total catch that is distant water fishing for most recent available data")}
+
+## 2) `r country_name` DWF Activities 
+
+```{r fig-prct-dwf, eval= TRUE, fig.cap= paste0("Percent of ", country_name, " total catch that is distant water fishing for most recent available data")}
 # calc total catch
 catch_total_yr <- country_i_dwf %>% 
   group_by(year) %>% 
@@ -367,19 +358,9 @@ cat(paste0("There is no recorded DWF by ", country_name, " in other countries EE
 ```{r, 3-fig-bar-dwf-species, eval= nrow(dwf_frgn) > 0, results='asis'}
 ```
 
-## 2) `r country_name` exports of DWF products
-
-```{r fig-stacked-consum-dwf,eval=TRUE, fig.cap=paste0("Consuming country of aquatic food caught via distant water fishing  by ", country_name, " in the most recent years of data (", paste(unique(dwf_frgn$year), collapse = ", "), ") and not including NAs")}
-
-plot_ts(dwf_frgn,
-        artis_var = "consumer_iso3c",
-        prop_flow_cutoff = 0.05,
-        plot.type = "stacked",
-        legend.title = "Consumer") +
-  scale_y_continuous(labels = scales::comma)
-```
-
-```{r, 4-fig-stacked-consum-dwf, results='asis'}
+```{r}
+# New Figure --
+# Sankey of overall flow (4 columns) with species, EEZ, producer, consumer (or possibly drop species if the 4 columns make it too messy) – focal country will be producer in all cases here
 ```
 
 ```{r figs-dwf-species-sankeys,eval=TRUE, echo=FALSE, results='hide', fig.keep='all', fig.pos='h', fig.cap=paste0(top_6_sp_dwf$common_name, ": caught via DWF by ", country_name, " (source EEZ --> producer --> consumer)")}
@@ -421,9 +402,24 @@ purrr::map(top_6_sp_dwf$common_name,
 ```{r, 10-fig-sankey-dwf, results='asis'}
 ```
 
+
+```{r fig-stacked-consum-dwf,eval=TRUE, fig.cap=paste0("Consuming country of aquatic food caught via distant water fishing  by ", country_name, " in the most recent years of data (", paste(unique(dwf_frgn$year), collapse = ", "), ") and not including NAs")}
+
+plot_ts(dwf_frgn,
+        artis_var = "consumer_iso3c",
+        prop_flow_cutoff = 0.05,
+        plot.type = "stacked",
+        legend.title = "Consumer") +
+  scale_y_continuous(labels = scales::comma)
+```
+
+```{r, 4-fig-stacked-consum-dwf, results='asis'}
+```
+
+
 ## 3) Consumption of DWF by `r country_name`
 
-```{r fig-consump,eval=TRUE, out.width="100%", fig.width=8.57,fig.cap= paste0(country_name, " consumption of catch from its own waters. Domestic production referes to catch ", country_name, "produces and Foreign fleet production is a foreign country's catch in ", country_name, " water. Note y-axes may not be same scale.")}
+```{r fig-consump, eval=TRUE, out.width="100%", fig.width=8.57,fig.cap= paste0(country_name, " consumption of catch from its own waters. Domestic production referes to catch ", country_name, "produces and Foreign fleet production is a foreign country's catch in ", country_name, " water. Note y-axes may not be same scale.")}
 
 # consum_dom is  Focal country consumption of catch in its own waters
 # could be domestic catch or catch by a different nation
@@ -546,6 +542,11 @@ exploreARTIS::plot_bar(data = top_6_sp_consum,
 ```
 
 ```{r, 13-fig-bar-top-sp-consump, results='asis'}
+```
+
+```{r}
+# New Figure
+# Sankey of overall flow (4 columns) with species, EEZ, producer, consumer (or possibly drop species if the 4 columns make it too messy) – focal country will be consumer in all cases here
 ```
 
 ```{r figs-sankey-consump, echo = FALSE, cache = FALSE, results = 'hide', fig.keep = 'all', fig.cap = paste0(top_6_sp_consum$common_name, ": ", country_name, " consumption of distant water fishing products in the most recent available data (", paste(unique(consum_dwf$year), collapse = ", "), "). The flows represent the EEZ where the product was caught --> producer country (who caught the product) --> consumer country (who consumed the end product))")}
