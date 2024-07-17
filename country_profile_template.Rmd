@@ -102,16 +102,16 @@ title: |
 
 # Overview
 
-This report provides an analysis of `r country_name`'s distant water fishing (DWF). 
+This report provides an analysis of distant water fishing (DWF) related to `r country_name`. We define distant water fishing as capture fishery landings that occur in the exclusive economic zone (EEZ) of a country other than the flag of the country. 
+
 There are three aspects of distant water fishing investigated in this report:
 
-1) DWF activities
-2) Exports of DWF products
-3) Consumption of DWF sourced products
-4) DWF activities within EEZ
+1) The focal country's own DWF activities
+2) The focal country's consumption of aquatic foods sourced via DWF (conducted by them or another country)
+3) DWF activities by other nations within the focal country's EEZ
 
 ```{r, eval = foc_logic == TRUE, results='asis'}
-cat(paste0("**Please note**: ", country_name, " been declared a flag of convience (FOC) by the International Transport Workers Federation's (ITF) Fair Practices Committee (a joint committee of ITF seafarers' and dockers' unions), which runs the ITF campaign against FOCs as of ", format(Sys.Date(), '%B %d, %Y'), ". This status may affect the following results."))
+cat(paste0("**Please note**: ", country_name, " been declared a flag of convience (FOC) by the International Transport Workers Federation's (ITF) Fair Practices Committee (a joint committee of ITF seafarers' and dockers' unions), which runs the ITF campaign against FOCs as of ", format(Sys.Date(), '%B %d, %Y'), ". This status may affect the following results, including by increasing apparent consumption of aquatic foods."))
 ```
 
 
@@ -259,13 +259,9 @@ cat(paste0("There is no recorded DWF by ", country_name, " in other countries EE
 
 ## 2) `r country_name` exports of DWF products
 
-```{r fig-stacked-consum-dwf,eval=TRUE, fig.cap=paste0("Distant water fishing exports by ", country_name, " by the end consumer in the most recent years of data (", paste(unique(dwf_frgn$year), collapse = ", "), ") and not including NAs")}
+```{r fig-stacked-consum-dwf,eval=TRUE, fig.cap=paste0("Consuming country of aquatic food caught via distant water fishing  by ", country_name, " in the most recent years of data (", paste(unique(dwf_frgn$year), collapse = ", "), ") and not including NAs")}
 
-dwf_frgn_consum <- dwf_frgn %>% 
-  filter(sciname %in% top_6_sp_dwf$sciname) %>% 
-  ungroup()
-
-plot_ts(dwf_frgn_consum,
+plot_ts(dwf_frgn,
         artis_var = "consumer_iso3c",
         prop_flow_cutoff = 0.05,
         plot.type = "stacked",
@@ -273,13 +269,6 @@ plot_ts(dwf_frgn_consum,
   scale_y_continuous(labels = scales::comma)
 ```
 
-FIXTHIS: should this only include the top species caught via DWF? Code for plot currently filters like this:
-```
-dwf_frgn_consum <- dwf_frgn %>% 
-  filter(sciname %in% top_6_sp_dwf$sciname) %>% 
-  ungroup()
-```
-This makes sense for Sankey plots, but revist if this consumer plot needs this filter also. 
 
 ```{r save-top-6-sp-dwf, eval = FALSE}
 # Record missing common_name values for correction
