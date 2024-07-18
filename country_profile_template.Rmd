@@ -98,22 +98,25 @@ cat(paste0("**Please note**: ", country_name, " been declared a flag of convienc
 ```
 
 ```{r create-dataframes}
-# 1) focal country DWF activities
+# 1) focal country DWF activities -----------------------
 dwf_frgn <- country_i_dwf %>% 
   filter(dwf == "foreign")
   # domestic reference
 dwf_dom <- country_i_dwf %>% 
   filter(dwf != "foreign")
+  # find most recent 5 years for filtering top species
+max_year <- max(dwf_frgn$year)
+last_5_yrs <- seq(max_year - 4, max_year, by = 1)
   # top 6 species caught via dwf
 top_6_sp_dwf <- dwf_frgn %>% 
+  filter(year %in% c(last_5_yrs)) %>% 
   group_by(sciname, common_name) %>% 
-  # total live weight (tons)
-  summarise(live_weight_t = sum(live_weight_t),
+  summarise(live_weight_t = sum(live_weight_t), # total live weight (tons)
             .groups = "drop") %>% 
   arrange(desc(live_weight_t)) %>% 
   slice_head(n = 6)
 
-# 2) Focal country's consumption 
+# 2) Focal country's consumption -------------------------
   # a) fish caught in its own waters (regardless of who is fishing)
 consum_dom <- country_i_consump %>% 
   filter(eez_iso3c == country_iso3c)
@@ -126,8 +129,12 @@ consum_frgn <- country_i_consump %>%
   # c) country's consumption of DWF fish
 consum_dwf <- country_i_consump %>% 
   filter(dwf == "foreign")
+  # find most recent 5 years for filtering top species
+max_year <- max(consum_dwf$year)
+last_5_yrs <- seq(max_year - 4, max_year, by = 1)
   # top 6 species consumed 
 top_6_sp_consum <- consum_dwf %>% 
+  filter(year %in% c(last_5_yrs)) %>% 
   group_by(sciname, common_name) %>% 
   # total live_weight
   summarise(live_weight_t = mean(live_weight_t),
@@ -135,14 +142,18 @@ top_6_sp_consum <- consum_dwf %>%
   arrange(desc(live_weight_t)) %>% 
   slice_head(n = 6)
     
-# 3) Fishing activity in focal country EEZ by other countries
+# 3) Fishing activity in focal country EEZ by other countries ---------------
 eez_frgn <- country_i_eez_fishing %>% 
   filter(dwf == "foreign")
   # domestic reference - same as dwf_dom
 eez_dom <- country_i_eez_fishing %>% 
   filter(dwf != "foreign")
+  # find most recent 5 years for filtering top species
+max_year <- max(consum_dwf$year)
+last_5_yrs <- seq(max_year - 4, max_year, by = 1)
   # top species 
 top_6_sp_eez_frgn <- eez_frgn %>% 
+  filter(year %in% c(last_5_yrs)) %>% 
   group_by(sciname, common_name) %>% 
   # total live_weight
   summarise(live_weight_t = mean(live_weight_t),
@@ -381,7 +392,7 @@ exploreARTIS::plot_ts(dwf_frgn,
 
 **Note**: Data is filtered to the last 5 years of available data.
 
-```{r fig-bar-dwf-species, eval= nrow(dwf_frgn) > 0, fig.cap=paste0("Top species caught via distant water fishing by tons of live weight. Sum for the last 5 years of available data (", paste(unique(dwf_frgn$year), collapse = ", "), ")")}
+```{r fig-bar-dwf-species, eval= nrow(dwf_frgn) > 0, fig.cap=paste0("Top species caught via distant water fishing by tons of live weight. Sum for the most recent available data (", paste(unique(dwf_frgn$year), collapse = ", "), ")")}
 
 exploreARTIS::plot_bar(data = top_6_sp_dwf,
                                bar_group = "common_name",
@@ -440,7 +451,8 @@ dwf_frgn_sankey <- dwf_frgn %>%
 )
 ```
 
-```{r figs-sankeys-dwf-species, results='hide', fig.keep='all', fig.cap=paste0(top_6_sp_dwf$common_name, ": caught via DWF by ", country_name, " (source EEZ --> producer --> consumer)")}
+```{r figs-sankeys-dwf-species, results='hide', fig.keep='all', fig.cap=paste0(country_name, "'s total DWF catch of ", top_6_sp_dwf$common_name, " for the most recent available data (", paste(unique(dwf_frgn$year), collapse = ", "), ")")}
+
 # fig.cap = c('first plot', 'second plot') # will provide unique captions to plots
 dwf_frgn_consum_sankey <- dwf_frgn_consum %>% 
   exploreARTIS::add_country_name("producer_iso3c") %>% 
@@ -456,7 +468,7 @@ purrr::map(top_6_sp_dwf$common_name,
                                   "consumer_iso3c_name"),
                          plot.title = .x) + 
              theme(plot.title = element_text(size=12)) +
-             scale_x_discrete(labels = c("EEZ", "producer", "consumer")) +
+             scale_x_discrete(labels = c("EEZ", "Producer", "Consumer")) +
              theme(axis.text.x = element_text(size = 8))
            )
 ```
@@ -642,53 +654,23 @@ purrr::map(top_6_sp_consum$common_name,
            )
 ```
 
-```{r, eval= FALSE}
-# results <- purrr::map2(top_6_sp_consum$common_name, seq_along(top_6_sp_consum$common_name), 
-#                        ~ plot_sankey_annote(consum_dwf, .x, .y, country_iso3c))
-```
-
-```{r, eval= FALSE, opts.label='sankey_consump_opts'}
-results[1]
-```
-
 ```{r 14-fig-sankey-consump, results='asis'}
-```
-
-```{r, eval= FALSE, opts.label='sankey_consump_opts'}
-results[2]
 ```
 
 ```{r 15-fig-sankey-consump, results='asis'}
 ```
 
-```{r, eval= FALSE}
-results[3]
-```
-
 ```{r 16-fig-sankey-consump, results='asis'}
-```
-
-```{r, eval= FALSE}
-results[4]
 ```
 
 ```{r 17-fig-sankey-consump, results='asis'}
 ```
 
-```{r, eval= FALSE}
-results[5]
-```
-
 ```{r 18-fig-sankey-consump, results='asis'}
-```
-
-```{r, eval= FALSE}
-results[6]
 ```
 
 ```{r 19-fig-sankey-consump, results='asis'}
 ```
-
 
 ```{r fig-stacked-consum-dwf,eval=TRUE, fig.cap=paste0("Consuming country of aquatic food caught via distant water fishing  by ", country_name, " in the most recent years of data (", paste(unique(dwf_frgn$year), collapse = ", "), ") and not including NAs")}
 
