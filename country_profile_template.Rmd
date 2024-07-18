@@ -126,10 +126,6 @@ consum_frgn <- country_i_consump %>%
   # c) country's consumption of DWF fish
 consum_dwf <- country_i_consump %>% 
   filter(dwf == "foreign")
-  # add country names
-consum_dwf <- consum_dwf %>% 
-  exploreARTIS::add_country_name("producer_iso3c") %>% 
-  exploreARTIS::add_country_name("consumer_iso3c")
   # top 6 species consumed 
 top_6_sp_consum <- consum_dwf %>% 
   group_by(sciname, common_name) %>% 
@@ -536,8 +532,8 @@ egg::ggarrange(plot1, plot2, ncol = 1)
 ```{r, 11-fig-consump, results='asis'}
 ```
 
-```{r fig-facet-consump, eval=TRUE, out.width="100%", fig.width=8.57, fig.cap=paste0("Fish consumed by ", country_name, " from other countries's waters. The left panel is fish caught by ", country_name, " in another country's EEZ and consumed by ", country_name, ". The middle panel is fish caught by another country in its own waters and consumed by ", country_name, " (this scenario is not DWF). The right panel is fish caught by another country in a different country's EEZ that is consumed by ", country_name,".")}
-#
+```{r fig-facet-consump, eval=TRUE, fig.fullwidth = TRUE, fig.width=8.57, fig.cap=paste0("Fish consumed by ", country_name, " from other countries's waters. The left panel is fish caught by ", country_name, " in another country's EEZ and consumed by ", country_name, ". The middle panel is fish caught by another country in its own waters and consumed by ", country_name, " (this scenario is not DWF). The right panel is fish caught by another country in a different country's EEZ that is consumed by ", country_name,".")}
+#, out.width="100%"
  # facet line plot - - Other EEZ
 
 # create facet variable for 3 other EEZ consumption scenarios:
@@ -572,7 +568,7 @@ consum_frgn_facet <- consum_frgn %>%
 ```{r, 12-fig-facet-consump, results='asis'}
 ```
 
-**Note**: Data is filtered to the last 5 years of available data
+**Note**: `plot_ts()` does not allow vertical stacked facet. When we expand years to all available, This plot will become squished. Can separate into 3 separate plots and `ggarrange()` to stack. Will need flexible calculation to hold y-axes across plots.
 
 ```{r, fig-bar-top-sp-consump, eval=TRUE, fig.cap=paste0("Top species consumed by ", country_name, " caught via distant water fishing by ", country_name, " and other countries. Sum of the most recent years of data available (", paste(unique(consum_dwf$year), collapse = ", "), ").")}
 
@@ -611,15 +607,30 @@ exploreARTIS::plot_bar(data = top_6_sp_consum,
 ```{r, 13-fig-bar-top-sp-consump, results='asis'}
 ```
 
-```{r}
+```{r fig-sankey-consump-all, fig.cap= paste0("All flows of ", country_name, "'s DWF consumption. Total for all years of available data (", paste(unique(consum_dwf$year), collapse = ", "),").")}
 # New Figure
 # Sankey of overall flow (4 columns) with species, EEZ, producer, consumer (or possibly drop species if the 4 columns make it too messy) – focal country will be consumer in all cases here
+
+consum_dwf_sankey <- consum_dwf %>%
+  exploreARTIS::add_country_name("producer_iso3c") %>%
+  exploreARTIS::add_country_name("consumer_iso3c")
+
+(plot_sankey(consum_dwf_sankey,
+             cols = c(
+               "common_name",
+               "eez_name",
+               "producer_iso3c_name",
+               "consumer_iso3c_name"),
+             plot.title = "") + 
+  scale_x_discrete(labels = c("Species", "EEZ", "Producer", "Consumer")) +
+  theme(axis.text.x = element_text(size = 8))
+)
 ```
 
 ```{r figs-sankey-consump, echo = FALSE, cache = FALSE, results = 'hide', fig.keep = 'all', fig.cap = paste0(top_6_sp_consum$common_name, ": ", country_name, " consumption of distant water fishing products in the most recent available data (", paste(unique(consum_dwf$year), collapse = ", "), "). The flows represent the EEZ where the product was caught --> producer country (who caught the product) --> consumer country (who consumed the end product))")}
 
 purrr::map(top_6_sp_consum$common_name, 
-           ~ plot_sankey(consum_dwf %>% 
+           ~ plot_sankey(consum_dwf_sankey %>% 
                            filter(.x == common_name),
                          cols = c("eez_name", 
                                   "producer_iso3c_name",
