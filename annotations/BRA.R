@@ -1,67 +1,97 @@
-## ---- 1-fig-prct-dwf --------
+## ---- fig-prct-eez-frgn-annote --------
 
-cat("This is the **annotation** for figure 1. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. ")
-
-
-## ---- 2-fig-line-dwf-eez --------
-
-cat("Annotation **Figure 2**. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. ")
+cat("This is the **annotation** Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. ")
 
 
-## ---- 3-fig-bar-dwf-species --------
+## ---- fig-line-eez-dwf-annote --------
 
-cat("Annotation **Figure 3**. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.")
-
-## ---- 4-fig-stacked-consum-dwf -------
-
-cat("Annotation **Figure 4**. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.")
-
-## ---- 5-fig-sankey-dwf -------
-cat("Annotation **Figure 5**. This is a test. Test. Test.")
-
-## ---- 6-fig-sankey-dwf -------
-cat("Annotation **Figure 6**. This is a test. Test. Test.")
-
-## ---- 7-fig-sankey-dwf -------
-cat("Annotation **Figure 7**. This is a test. Test. Test.")
-
-## ---- 8-fig-sankey-dwf -------
-cat("Annotation **Figure 8**. This is a test. Test. Test.")
-
-## ---- 9-fig-sankey-dwf -------
-cat("Annotation **Figure 9**. This is a test. Test. Test.")
-
-## ---- 10-fig-sankey-dwf -------
-cat("Annotation **Figure 10**. This is a test. Test. Test.")
-
-## ---- 11-fig-consump -------
-
-cat("Annotation **Figure 11**. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.")
-
-## ---- 12-fig-facet-consump -------
-
-cat("Annotation **Figure 12**. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.")
-
-## ---- 13-fig-bar-top-sp-consump -------
-
-cat("Annotation **Figure 13**. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.")
+cat("Annotation  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. ")
 
 
-## ---- 14-fig-sankey-consump -------
-cat("Annotation **Figure 14**. This is a test. Test. Test.")
+## ---- fig-bar-sp-eez-dwf-annote --------
 
-## ---- 15-fig-sankey-consump -------
-cat("Annotation **Figure 15**. Another test.")
+cat("Annotation  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.")
 
-## ---- 16-fig-sankey-consump -------
-cat("Annotation **Figure 16**. Yet another test.")
+## ---- fig-sankey-eez-all-annote -------
 
-## ---- 17-fig-sankey-consump -------
-cat("Annotation **Figure 17**. Test again.")
+cat("Annotation Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.")
 
-## ---- 18-fig-sankey-consump -------
-cat("Annotation **Figure 18**. Keep testing.")
+## ---- fig-sankey-eez-1 -------
+cat("Annotation This is a test. Test. Test.")
 
-## ---- 19-fig-sankey-consump -------
-cat("Annotation **Figure 19**. Final test.")
+## ---- fig-sankey-eez-2 -------
+cat("Annotation This is a test. Test. Test.")
 
+## ---- fig-sankey-eez-3 -------
+cat("Annotation This is a test. Test. Test.")
+
+## ---- fig-sankey-eez-4 -------
+cat("Annotation This is a test. Test. Test.")
+
+## ---- fig-sankey-eez-5 -------
+cat("Annotation This is a test. Test. Test.")
+
+## ---- fig-sankey-eez-6 -------
+cat("Annotation This is a test. Test. Test.")
+
+## ---- fig-line-dwf-eez-annote -------
+cat("Annotation Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.")
+
+## ---- fig-bar-dwf-species-annote -------
+cat("Annotation Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.")
+
+## ---- fig-sankey-dwf-all-annote -------
+cat("Annotation Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.")
+
+## ---- fig-sankey-dwf-1 -------
+cat("Annotation This is a test. Test. Test.")
+
+## ---- fig-sankey-dwf-2 -------
+cat("Annotation This is a test. Test. Test.")
+
+## ---- fig-sankey-dwf-3 -------
+cat("Annotation This is a test. Test. Test.")
+
+## ---- fig-sankey-dwf-4 -------
+cat("Annotation This is a test. Test. Test.")
+
+## ---- fig-sankey-dwf-5 -------
+cat("Annotation This is a test. Test. Test.")
+
+## ---- fig-sankey-dwf-6 -------
+cat("Annotation This is a test. Test. Test.")
+
+
+
+## ---- fig-consump-annote -------
+cat("Annotation Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.")
+
+## ---- fig-facet-consump-annote -------
+cat("Annotation Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.")
+
+## ---- fig-bar-top-sp-consump-annote -------
+cat("Annotation Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.")
+
+## ---- fig-sankey-consump-all-annote -------
+cat("Annotation Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.")
+
+## ---- fig-sankey-consump-1 -------
+cat("Annotation This is a test. Test. Test.")
+
+## ---- fig-sankey-consump-2 -------
+cat("Annotation This is a test. Test. Test.")
+
+## ---- fig-sankey-consump-3 -------
+cat("Annotation This is a test. Test. Test.")
+
+## ---- fig-sankey-consump-4 -------
+cat("Annotation This is a test. Test. Test.")
+
+## ---- fig-sankey-consump-5 -------
+cat("Annotation This is a test. Test. Test.")
+
+## ---- fig-sankey-consump-6 -------
+cat("Annotation This is a test. Test. Test.")
+
+## ---- fig-stacked-consum-dwf-annote -------
+cat("Annotation Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.")
