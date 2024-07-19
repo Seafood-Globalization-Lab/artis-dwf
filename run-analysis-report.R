@@ -15,6 +15,7 @@ library(glue)
 library(cleanrmd)
 library(tufte)
 library(stringr)
+library(job)
 
 
 # Create directories ------------------------------------------------------
@@ -94,10 +95,10 @@ message("running clean_data.R is complete")
 # Countries of interest ---------------------------------------------------
 
 # Vector of Oceana countries:
-countries <- c("Belize", "Brazil", "Canada", "Chile", "Mexico", "Philippines", "Peru", "UK", "USA", "Spain", "Malaysia", "Ghana", "Senegal")
+#countries <- c("Belize", "Brazil", "Canada", "Chile", "Mexico", "Philippines", "Peru", "UK", "USA", "Spain", "Malaysia", "Ghana", "Senegal")
 #countries <- c("Belize")
 #countries <- c("Malaysia", "Belize", "Brazil", "Canada")
-#countries <- "Malaysia"
+countries <- "Malaysia"
 
 # Standardize country names
 countries_std <- countrycode(countries,
@@ -107,11 +108,12 @@ countries_std <- countrycode(countries,
 #countries_i <- countries_std
 
 # Filter last 5 years of data ----------------------------
-max_year <- max(consumption_eez$year)
-last_x_yrs <- seq(max_year - 4, max_year, by = 1)
+# uncomment to filter data by year & in consumption_eez_2
+#max_year <- max(consumption_eez$year)
+#last_x_yrs <- seq(max_year - 4, max_year, by = 1)
 
 consumption_eez_2 <- consumption_eez %>% 
-  filter(year %in% last_x_yrs) %>% 
+#  filter(year %in% last_x_yrs) %>% 
   # rename AM's cleaning data script column names that are confusing to align with standard ARTIS column names (clean_data.R)
   rename(producer_iso3c = source_country_iso3c,
          eez_iso3c = catch_artis_iso3,
@@ -127,7 +129,9 @@ consumption_eez_2 <- consumption_eez %>%
 for (i in 1:length(countries_std)) {
   countries_i <- countries_std[i]
   
-  # is country flag of convience
+#job::job({
+  
+  # is country flag of convenience
   foc_logic <- countries_i %in% itf_foc_std$country_iso3c
 
   message(glue::glue("started filtering {countries_i} data"))
@@ -159,6 +163,7 @@ for (i in 1:length(countries_std)) {
     output_dir = outdir,
     output_file = paste("dwf", countries_i, "profile.pdf", sep = "_")
   )
+#}, title = paste0(countries_i, " ", Sys.time()))
   
 }
 
