@@ -63,6 +63,8 @@ sciname_common <- sciname_metadata %>%
           common_name = "large-tooth flounder") %>% #fishbase website family
   add_row(sciname = "cephea",
           common_name = "cephea genus jelly") %>% 
+  add_row(sciname = "malacostraca", 
+          common_name = "malacostraca class") %>%
   # replace common names with "=" with shortened version
   mutate(common_name = if_else(str_detect(common_name, "="), 
                                str_extract(common_name, "(?<=\\=)[^\\)]+"), 
@@ -95,10 +97,13 @@ message("running clean_data.R is complete")
 # Countries of interest ---------------------------------------------------
 
 # Vector of Oceana countries:
+#countries <- c("Brazil", "Canada", "Chile", "Mexico", "Philippines", "Peru", "UK", "USA", "Spain","Ghana", "Senegal")
+countries <- "USA"
 #countries <- c("Belize", "Brazil", "Canada", "Chile", "Mexico", "Philippines", "Peru", "UK", "USA", "Spain", "Malaysia", "Ghana", "Senegal")
-#countries <- c("Belize")
+#countries <- c("Belize", "Brazil", "Canada", "Chile", "Mexico")
+#countries <- c("Belize", "Malaysia")
 #countries <- c("Malaysia", "Belize", "Brazil", "Canada")
-countries <- "Malaysia"
+#countries <- "Malaysia"
 
 # Standardize country names
 countries_std <- countrycode(countries,
@@ -124,12 +129,10 @@ consumption_eez_2 <- consumption_eez %>%
 #file.create(file.path(outdir, "common_name_na.csv"))
 
 # Build DWF profiles ---------------------------------------------
-
+#job::job({
 # Loop through focal countries - Build reports for each
 for (i in 1:length(countries_std)) {
   countries_i <- countries_std[i]
-  
-#job::job({
   
   # is country flag of convenience
   foc_logic <- countries_i %in% itf_foc_std$country_iso3c
@@ -163,9 +166,9 @@ for (i in 1:length(countries_std)) {
     output_dir = outdir,
     output_file = paste("dwf", countries_i, "profile.pdf", sep = "_")
   )
-#}, title = paste0(countries_i, " ", Sys.time()))
   
 }
+#}, title = paste0(countries_i, " ", Sys.time()))
 
 
 
