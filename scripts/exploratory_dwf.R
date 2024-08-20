@@ -71,12 +71,14 @@ prod_sau <- prod_sau %>%
   # remove columns only used for standardization process
   select(-catch_eez_1, -catch_eez_2, -catch_eez) %>% 
   
+  # add habitat and method to sau data
+  mutate(prod_method = "capture", 
+         habitat = "marine") %>%
+  
   # aggregate catch quantity records
-  # group_by(group_by(across(-quantity))) %>% 
-  # summarize(live_weight_t = sum(quantity)) %>% 
-  group_by(year, prod_iso3, SciName, prod_method, 
+  group_by(year, prod_iso3, sciname, prod_method, 
            habitat, catch_artis_iso3, catch_artis_country_name) %>% 
-  summarise(live_weight_t = sum(quantity)) %>% 
+  summarise(live_weight_t = sum(live_weight_t)) %>% 
   ungroup() %>% 
   
   # Tag domestic versus foreign fishing
@@ -106,6 +108,21 @@ prod_sau %>%
   filter(total_dwf > 1000000) %>%
   ungroup() %>%
   ggplot(aes(y = fct_reorder(catch_artis_country_name, total_dwf), 
+             x = total_dwf/(1000000*length(unique(prod_sau$year))))) +
+  geom_bar(stat = "identity") +
+  labs(y = "", 
+       x = "Ave. Landings (mil t, live weight)",
+       title = "") +
+  theme_bw()
+
+# Average Landings x Country
+prod_sau %>%
+  filter(dwf == "foreign") %>%
+  group_by(prod_iso3) %>%
+  summarise(total_dwf = sum(live_weight_t)) %>%
+  filter(total_dwf > 1000000) %>%
+  ungroup() %>%
+  ggplot(aes(y = fct_reorder(prod_iso3, total_dwf), 
              x = total_dwf/(1000000*length(unique(prod_sau$year))))) +
   geom_bar(stat = "identity") +
   labs(y = "", 
@@ -160,25 +177,25 @@ prod_sau %>%
 prod_sau_props <- prod_sau %>%
   # aggregate landings amount - 
   # disregard habitat, production method, sector, end use
-  group_by(year, prod_iso3, SciName, 
+  group_by(year, prod_iso3, sciname, 
            catch_artis_country_name, catch_artis_iso3, dwf) %>%
   summarise(live_weight_t = sum(live_weight_t)) %>% 
   # calculate prop catch over each source eez - 
   # does not contract df over 2nd group_by()
-  group_by(year, prod_iso3, SciName) %>% # needs to be exactly what data is joining by after
+  group_by(year, prod_iso3, sciname) %>% # needs to be exactly what data is joining by after
   mutate(prop_by_catch_eez = live_weight_t/sum(live_weight_t)) %>%
   select(-live_weight_t)
 
 # Disaggregate ARTIS by EEZ of catch - join datasets
 artis_eez <- artis_sau %>% 
-  # prod_sau (therefor prod_sau_props) is inherently only marine capture - match artis_sau data
+  # prod_sau is inherently only marine capture - match artis_sau data
   filter(habitat == "marine", 
          method == "capture") %>%
   # pull prod_sau_props data for year year, source country, and species
   left_join(prod_sau_props, 
             by = c("year", 
                    "source_country_iso3c" = "prod_iso3", 
-                   "sciname" = "SciName")) %>%
+                   "sciname")) %>%
   # recalculate live_weight_t catch - each trade and product record gets split apart by the number of catch eez from prod_sau_props - essentially assigning a probability a product was caught in a specific eez. 
   mutate(live_weight_t = live_weight_t*prop_by_catch_eez)
 # many-to-many warning is what we expect here - one row of artis_sau correlates with multiple prod_sau eez
@@ -192,7 +209,7 @@ year_int <- 2019
 
 # Filter for China
 artis_eez_chn <- artis_eez %>% 
-  # prod_sau (subsequently join product artis_eez) is inherently only marine capture - Needs to match filtered artis_sau data
+  # prod_sau is inherently only marine capture - match artis_sau data
   filter(source_country_iso3c == "CHN",
          year == year_int)
 
@@ -214,8 +231,7 @@ artis_eez_chn %>%
   group_by(sciname) %>%
   summarise(live_weight_t = sum(live_weight_t)) %>%
   arrange(desc(live_weight_t)) %>%
-  slice_head(n = 25)
-  #print(n = 25)
+  print(n = 25)
 
 # plot artis_sau$source_country_iso3c (without catch eez information)
 artis_eez_chn %>%
@@ -368,3 +384,21 @@ artis_fmfo %>%
           plot.type = "stacked") +
   theme(legend.title = element_text("Source Country"))
 
+
+# Peru Analysis -------------------------------------------------------
+artis_eez_per <- artis_eez %>%
+  # Those fishing pota in Peru's water 
+  filter(catch_artis_iso3 == "PER", sciname == "dosidicus gigas")
+
+artis_eez_per %>% 
+  plot_sankey()
+
+# Madagascar Analysis -------------------------------------------------------
+artis_eez_mdg <- artis_eez %>%
+  # Those fishing pota in Peru's water 
+  filter(catch_artis_iso3 == "MDG")
+
+artis_eez_mdg %>% 
+  filter(year %in% 2015:2019, 
+         sciname == "katsuwonus pelamis") %>%
+  plot_sankey()
