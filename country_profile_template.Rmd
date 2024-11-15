@@ -316,7 +316,7 @@ cat(paste0("There is no recorded DWF occuring in ", country_name, " EEZ waters b
 
 eez_fishing_sankey <- country_i_eez_fishing %>%
   exploreARTIS::add_country_name("producer_iso3c") %>%
-  exploreARTIS::add_country_name("consumer_iso3c")
+  exploreARTIS::add_country_name("consumer_iso3c") 
 
 (plot_sankey(eez_fishing_sankey,
              cols = c(
@@ -339,7 +339,7 @@ eez_fishing_sankey <- country_i_eez_fishing %>%
 
 eez_frgn_sankey <- eez_frgn %>%
   exploreARTIS::add_country_name("producer_iso3c") %>%
-  exploreARTIS::add_country_name("consumer_iso3c")
+  exploreARTIS::add_country_name("consumer_iso3c") 
 
 purrr::map(top_6_sp_eez_frgn$common_name, 
            ~ plot_sankey(eez_frgn_sankey %>% 
@@ -347,6 +347,7 @@ purrr::map(top_6_sp_eez_frgn$common_name,
                          cols = c("eez_name", 
                                   "producer_iso3c_name",
                                   "consumer_iso3c_name"),
+                         #prop_flow_cutoff = 0,
                          plot.title = .x) + 
              theme(plot.title = element_text(size=12)) +
              scale_x_discrete(labels = c("EEZ", "Producer", "Consumer")) +
@@ -471,7 +472,7 @@ cat(paste0("There is no recorded DWF by ", country_name, " in other countries EE
 
 dwf_frgn_sankey <- dwf_frgn %>%
   exploreARTIS::add_country_name("producer_iso3c") %>%
-  exploreARTIS::add_country_name("consumer_iso3c")
+  exploreARTIS::add_country_name("consumer_iso3c") 
 
 (plot_sankey(dwf_frgn_sankey,
              cols = c(
@@ -660,7 +661,7 @@ exploreARTIS::plot_bar(data = top_6_sp_consum,
 
 consum_dwf_sankey <- consum_dwf %>%
   exploreARTIS::add_country_name("producer_iso3c") %>%
-  exploreARTIS::add_country_name("consumer_iso3c")
+  exploreARTIS::add_country_name("consumer_iso3c") 
 
 (plot_sankey(consum_dwf_sankey,
              cols = c(
