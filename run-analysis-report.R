@@ -16,6 +16,7 @@ library(cleanrmd)
 library(tufte)
 library(stringr)
 library(job)
+library(data.table)
 
 
 # Create directories ------------------------------------------------------
@@ -33,14 +34,14 @@ anndir <- file.path(".", "annotations", fsep = "/")
 # load new SAU data - AM from ARTIS repo ./QA/outputs/
 # Only contains species & countries standardized SAU marine capture (not EEZ) 
 if(exists("prod_sau") == FALSE){
-  prod_sau <- read_csv(
+  prod_sau <- fread(
     file.path(".", "data", "standardized_sau_prod.csv",
               fsep = "/"))
 }
 
 # Read in local SAU consumption file (eventually replace with Heroku db)
 if(exists("consumption") == FALSE){
-  consumption <- read_csv(
+  consumption <- fread(
     file.path(".", "data", "complete_consumption.csv")) 
 }
 
@@ -94,11 +95,25 @@ if(exists("consumption_eez") == FALSE){
 
 message("running clean_data.R is complete")
 
+# Filter last 5 years of data ----------------------------
+# uncomment to filter data by year & in consumption_eez_2
+#max_year <- max(consumption_eez$year)
+#last_x_yrs <- seq(max_year - 4, max_year, by = 1)
+
+consumption_eez_2 <- consumption_eez %>% 
+  #  filter(year %in% last_x_yrs) %>% 
+  # rename AM's cleaning data script column names that are confusing to align with standard ARTIS column names (clean_data.R)
+  rename(producer_iso3c = source_country_iso3c,
+         eez_iso3c = catch_artis_iso3,
+         eez_name = catch_artis_country_name)
+
+fwrite(consumption_eez_2, file.path(outdir, "complete_consumption_eez.csv"))
+
 # Countries of interest ---------------------------------------------------
 
 # Vector of Oceana countries:
-#countries <- c("Brazil", "Canada", "Chile", "Mexico", "Philippines", "Peru", "UK", "USA", "Spain","Ghana", "Senegal")
-countries <- "USA"
+countries <- c("Brazil", "Canada", "Chile", "Mexico", "Philippines", "Peru", "UK", "USA", "Spain","Ghana", "Senegal")
+#countries <- "Peru"
 #countries <- c("Belize", "Brazil", "Canada", "Chile", "Mexico", "Philippines", "Peru", "UK", "USA", "Spain", "Malaysia", "Ghana", "Senegal")
 #countries <- c("Belize", "Brazil", "Canada", "Chile", "Mexico")
 #countries <- c("Belize", "Malaysia")
@@ -111,18 +126,6 @@ countries_std <- countrycode(countries,
                               destination = "iso3c")
 # for testing only
 #countries_i <- countries_std
-
-# Filter last 5 years of data ----------------------------
-# uncomment to filter data by year & in consumption_eez_2
-#max_year <- max(consumption_eez$year)
-#last_x_yrs <- seq(max_year - 4, max_year, by = 1)
-
-consumption_eez_2 <- consumption_eez %>% 
-#  filter(year %in% last_x_yrs) %>% 
-  # rename AM's cleaning data script column names that are confusing to align with standard ARTIS column names (clean_data.R)
-  rename(producer_iso3c = source_country_iso3c,
-         eez_iso3c = catch_artis_iso3,
-         eez_name = catch_artis_country_name)
 
 # Troubleshoot common name NAs ----------------------------
 # create empty csv for recording common name NAs recorded in the Rmd
