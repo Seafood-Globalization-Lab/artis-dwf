@@ -10,13 +10,14 @@ library(exploreARTIS)
 library(rmarkdown)
 library(readr)
 library(tidyr)
-library(sqldf)
+#library(sqldf)
 library(glue)
 library(cleanrmd)
 library(tufte)
 library(stringr)
-library(job)
+#library(job)
 library(data.table)
+library(arrow)
 
 
 # Create directories ------------------------------------------------------
@@ -41,8 +42,8 @@ if(exists("prod_sau") == FALSE){
 
 # Read in local SAU consumption file (eventually replace with Heroku db)
 if(exists("consumption") == FALSE){
-  consumption <- fread(
-    file.path(".", "data", "complete_consumption.csv")) 
+  consumption <- read_parquet(
+    file.path(".", "data", "complete_consumption.parquet")) 
 }
 
 # read in scientific name metadata (contains common names)
@@ -96,20 +97,20 @@ if(exists("consumption_eez") == FALSE){
 message("running clean_data.R is complete")
 
 # Filter last 5 years of data ----------------------------
-# uncomment to filter data by year & in consumption_eez_2
+# uncomment to filter data by year & in consumption_eez
 #max_year <- max(consumption_eez$year)
 #last_x_yrs <- seq(max_year - 4, max_year, by = 1)
 
-consumption_eez_2 <- consumption_eez %>% 
   #  filter(year %in% last_x_yrs) %>% 
-  # rename AM's cleaning data script column names that are confusing to align with standard ARTIS column names (clean_data.R)
-  rename(producer_iso3c = source_country_iso3c,
-         eez_iso3c = catch_artis_iso3,
-         eez_name = catch_artis_country_name)
 
-fwrite(consumption_eez_2, file.path(outdir, "complete_consumption_eez.csv"))
+
+# write consumption (with EEZ) parquet file
+# library(arrow)
+# arrow_consump <- arrow_table(consumption_eez)
+# write_parquet(arrow_consump, file.path(outdir, "consumption_eez_2024_12_06.parquet"))
 
 # Countries of interest ---------------------------------------------------
+
 
 # Vector of Oceana countries:
 countries <- c("Brazil", "Canada", "Chile", "Mexico", "Philippines", "Peru", "UK", "USA", "Spain","Ghana", "Senegal")
@@ -143,17 +144,17 @@ for (i in 1:length(countries_std)) {
   message(glue::glue("started filtering {countries_i} data"))
   
   # 1) focal country DWF activities
-  country_i_dwf <- consumption_eez_2 %>% 
+  country_i_dwf <- consumption_eez %>% 
     filter(producer_iso3c == countries_i) %>% 
     left_join(sciname_common, by = "sciname")
 
   # 2) focal country consumption of DWF catch
-  country_i_consump <- consumption_eez_2 %>% 
+  country_i_consump <- consumption_eez %>% 
     filter(consumer_iso3c == countries_i) %>% 
     left_join(sciname_common, by = "sciname")
     
   # 3) Fishing activity in focal country EEZ
-  country_i_eez_fishing <- consumption_eez_2 %>% 
+  country_i_eez_fishing <- consumption_eez %>% 
     filter(eez_iso3c == countries_i) %>% 
     left_join(sciname_common, by = "sciname")
 
@@ -171,7 +172,6 @@ for (i in 1:length(countries_std)) {
   )
   
 }
+
 #}, title = paste0(countries_i, " ", Sys.time()))
-
-
 
