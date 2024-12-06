@@ -41,10 +41,10 @@ prod_sau <- prod_sau %>%
                                       origin = "iso3c", 
                                       destination = "country.name")) %>% 
   
-  # adds artis_iso3 and catch_artis_country_name columns
+  # adds artis_iso3 and eez_name columns
   standardize_sau_eez("catch_eez_iso3c", "catch_eez_name") %>% 
-  rename(catch_artis_iso3 = artis_iso3,
-         catch_artis_country_name = artis_country_name) %>% 
+  rename(eez_iso3c = artis_iso3,
+         eez_name = artis_country_name) %>% 
   
   # remove columns only used for standardization process
   select(-catch_eez_1, -catch_eez_2, -catch_eez) %>% 
@@ -53,13 +53,13 @@ prod_sau <- prod_sau %>%
   # group_by(group_by(across(-quantity))) %>% 
   # summarize(live_weight_t = sum(quantity)) %>% 
   group_by(year, prod_iso3, SciName, prod_method, 
-           habitat, catch_artis_iso3, catch_artis_country_name) %>% 
+           habitat, eez_iso3c, eez_name) %>% 
   summarise(live_weight_t = sum(quantity)) %>% 
   ungroup() %>% 
   
   # Tag domestic versus foreign fishing
   mutate(dwf = case_when(
-    (catch_artis_iso3 == prod_iso3) ~ "domestic",
+    (eez_iso3c == prod_iso3) ~ "domestic",
     TRUE ~ "foreign"
   ))
 
@@ -70,7 +70,7 @@ prod_sau_props <- prod_sau %>%
   # aggregate landings amount - 
   # disregard habitat, production method, sector, end use
   group_by(year, prod_iso3, SciName, 
-           catch_artis_country_name, catch_artis_iso3, dwf) %>%
+           eez_name, eez_iso3c, dwf) %>%
   summarise(live_weight_t = sum(live_weight_t)) %>% 
   # calculate prop catch over each source eez - 
   # does not contract df over 2nd group_by()
@@ -86,17 +86,17 @@ consumption_eez <- consumption %>%
   # pull prod_sau_props data for year year, source country, and species
   left_join(prod_sau_props, 
             by = c("year", 
-                   "source_country_iso3c" = "prod_iso3", 
+                   "producer_iso3c" = "prod_iso3", 
                    "sciname" = "SciName"), 
             relationship = "many-to-many") %>% 
   # recalculate live_weight_t catch - each trade and product record gets split apart by the number of catch eez from prod_sau_props - essentially assigning a probability a product was caught in a specific eez. 
   mutate(live_weight_t = consumption_t*prop_by_catch_eez) %>% 
 # many-to-many warning is what we expect here - one row of artis_sau correlates with multiple prod_sau eez
-  group_by(year, 
-           catch_artis_iso3, 
-           catch_artis_country_name,
-           source_country_iso3c, 
-           consumer_iso3c, 
-           sciname, 
-           dwf) %>% 
+  group_by(year,
+           eez_iso3c,
+           eez_name,
+           producer_iso3c,
+           consumer_iso3c,
+           sciname,
+           dwf) %>%
   summarise(live_weight_t = sum(live_weight_t))
